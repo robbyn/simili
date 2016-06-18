@@ -1,4 +1,4 @@
-package org.tastefuljava.simili.geometry;
+package org.tastefuljava.simili.render;
 
 import java.awt.Dimension;
 import java.awt.Font;
@@ -18,7 +18,7 @@ import org.tastefuljava.simili.model.Output;
 import org.tastefuljava.simili.model.Patch;
 import org.tastefuljava.simili.model.Pin;
 
-public class PaintContext {
+public class RenderContext {
     private final FontRenderContext frc;
     private final Properties props;
     private Font patchTitleFont;
@@ -28,7 +28,7 @@ public class PaintContext {
     private int patchSeparatorWidth = -1;
     private final Map<Patch, PatchMetrics> patchMetricsCache = new WeakHashMap<>();
 
-    public PaintContext(FontRenderContext frc, Properties props) {
+    public RenderContext(FontRenderContext frc, Properties props) {
         this.frc = frc;
         this.props = props;
     }

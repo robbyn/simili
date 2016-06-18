@@ -7,7 +7,7 @@ import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.util.Properties;
 import javax.swing.JComponent;
-import org.tastefuljava.simili.geometry.PaintContext;
+import org.tastefuljava.simili.render.RenderContext;
 import org.tastefuljava.simili.model.Schema;
 
 public class SchemaView extends JComponent {
@@ -38,7 +38,7 @@ public class SchemaView extends JComponent {
         FontRenderContext frc = new FontRenderContext(null,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON,
                 RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT);
-        PaintContext pc = new PaintContext(frc, props);
+        RenderContext pc = new RenderContext(frc, props);
         Rectangle rc = g.getClipBounds();
         pc.paint(g, schema, rc.x, rc.y, rc.width, rc.height);
     }

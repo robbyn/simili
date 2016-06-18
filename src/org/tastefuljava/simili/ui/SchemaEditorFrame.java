@@ -1,5 +1,6 @@
 package org.tastefuljava.simili.ui;
 
+import java.awt.HeadlessException;
 import java.awt.Rectangle;
 import java.io.IOException;
 import java.util.Properties;
@@ -84,14 +85,18 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
     private void saveBounds() {
         if (userSettings != null) {
-            try {
-                userSettings.put(PROP_BOUNDS, Util.formatRect(getBounds()));
-                Configuration.saveUserSettings(userSettings);
-            } catch (IOException ex) {
-                LOG.log(Level.SEVERE, null, ex);
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
+            userSettings.put(PROP_BOUNDS, Util.formatRect(getBounds()));
+            saveUserSettings();
+        }
+    }
+
+    private void saveUserSettings() throws HeadlessException {
+        try {
+            Configuration.saveUserSettings(userSettings);
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }

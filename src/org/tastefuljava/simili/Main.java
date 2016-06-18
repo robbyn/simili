@@ -1,15 +1,23 @@
 package org.tastefuljava.simili;
 
 import java.awt.EventQueue;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.tastefuljava.simili.ui.SchemaEditorFrame;
 
 public class Main {
+    private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new SchemaEditorFrame().setVisible(true);
+                try {
+                    new SchemaEditorFrame().display();
+                } catch (IOException ex) {
+                    LOG.log(Level.SEVERE, null, ex);
+                }
             }
         });
     }    

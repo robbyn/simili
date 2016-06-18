@@ -2,6 +2,7 @@ package org.tastefuljava.simili.geometry;
 
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
@@ -34,12 +35,12 @@ public class PaintContext {
 
     public Font getPatchTitleFont() {
         return patchTitleFont = requireFont(patchTitleFont, "patch-title-font",
-                "Helvetica-plain-10");
+                "Helvetica-plain-20");
     }
 
     public Font getPinNameFont() {
         return pinNameFont = requireFont(pinNameFont, "pin-name-font",
-                "Helvetica-italic-8");
+                "Helvetica-italic-16");
     }
 
     public int getPinWidth() {
@@ -93,8 +94,8 @@ public class PaintContext {
         return rc;
     }
 
-    public Iterable<Patch> filterPatches(int x, int y, int w, int h,
-            Iterable<Patch> patches) {
+    public Iterable<Patch> filterPatches(Iterable<Patch> patches, int x, int y,
+            int w, int h) {
         int right = x + w;
         int bottom = y + h;
         List<Patch> result = new ArrayList<>();
@@ -113,8 +114,7 @@ public class PaintContext {
         return result;
     }
 
-    public Iterable<Input> filterConnections(int x, int y, int w, int h,
-            Iterable<Patch> patches) {
+    public Iterable<Input> filterConnections(Iterable<Patch> patches, int x, int y, int w, int h) {
         Rectangle visible = new Rectangle(x, y, w, h);
         List<Input> result = new ArrayList<>();
         for (Patch patch: patches) {
@@ -130,6 +130,12 @@ public class PaintContext {
         return result;
     }
 
+    public void paint(Graphics2D g, Iterable<Patch> patches, int x, int y,
+            int w, int h) {
+        paintConnections(g, filterConnections(patches, x, y, w, h), x, y);
+        paintPatches(g, filterPatches(patches, x, y, w, h), x, y);
+    }
+
     private PatchMetrics patchMetrics(Patch patch) {
         PatchMetrics metrics = patchMetricsCache.get(patch);
         if (metrics == null) {
@@ -140,26 +146,6 @@ public class PaintContext {
             patchMetricsCache.put(patch, metrics);
         }
         return metrics;
-    }
-
-    private <T extends Pin> Rectangle pinBoundsInColumn(Iterable<T> pins,
-            T pin, int y, int x) {
-        int width = 0;
-        int height = 0;
-        boolean found = false;
-        for (Pin p : pins) {
-            Dimension dim = pinNameSize(p.getName());
-            width = Math.max(width, dim.width + getPinWidth());
-            if (!found) {
-                found = pin == p;
-                if (found) {
-                    height = dim.height;
-                } else {
-                    y += dim.height;
-                }
-            }
-        }
-        return new Rectangle(x, y, width, height);
     }
 
     private <T extends Pin> List<Dimension> pinColumnSize(Iterable<T> pins) {
@@ -218,6 +204,53 @@ public class PaintContext {
             sum += e;
         }
         return sum;
+    }
+
+    private void paintConnections(Graphics2D g, Iterable<Input> inputs,
+            int x, int y) {
+        for (Input in: inputs) {
+            paintConnection(g, in, x, y);
+        }
+    }
+
+    private void paintConnection(Graphics2D g, Input in, int x, int y) {
+        Rectangle rc = connectionBounds(in);
+        rc.translate(x, y);
+        g.drawLine(rc.x, rc.y, rc.x + rc.width, rc.y + rc.height);
+    }
+
+    private void paintPatches(Graphics2D g, Iterable<Patch> patches,
+            int x, int y) {
+        for (Patch patch: patches) {
+            paintPatch(g, patch, x + patch.getX(), y + patch.getY());
+        }
+    }
+
+    private void paintPatch(Graphics2D g, Patch patch, int x, int y) {
+        PatchMetrics pm = patchMetrics(patch);
+        Dimension size = pm.getSize();
+        g.drawRect(x, y, size.width, size.height);
+        Rectangle rc = pm.getTitleBounds();
+        rc.translate(x, y);
+        TextLayout layout = new TextLayout(patch.getTitle(),
+                getPatchTitleFont(), frc);
+        layout.draw(g, rc.x, rc.y + layout.getAscent());
+        int i = 0;
+        for (Input in: patch.getInputs()) {
+            rc = pm.getInputNameBounds(i++);
+            rc.translate(x, y);
+            layout = new TextLayout(in.getName(), getPinNameFont(), frc);
+            layout.draw(g, rc.x, rc.y + layout.getAscent());
+        }
+        i = 0;
+        for (Output out: patch.getOutputs()) {
+            rc = pm.getOutputNameBounds(i++);
+            rc.translate(x, y);
+            layout = new TextLayout(out.getName(), getPinNameFont(), frc);
+            Rectangle2D tbounds = layout.getBounds();
+            rc.x = rc.x + rc.width - (int)Math.ceil(tbounds.getWidth());
+            layout.draw(g, rc.x, rc.y + layout.getAscent());
+        }
     }
 
     private class PatchMetrics {
@@ -298,6 +331,18 @@ public class PaintContext {
             return new Rectangle(x, y, pw, inputHeight[i]);
         }
 
+        public Rectangle getInputNameBounds(int i) {
+            int bw = getPatchBorderWidth();
+            int sw = getPatchSeparatorWidth();
+            int pw = getPinWidth();
+            int x = bw + pw;
+            int y = bw + titleHeight + sw;
+            for (int k = 0; k < i; ++k) {
+                y += inputHeight[k];
+            }
+            return new Rectangle(x, y, inputWidth-pw, inputHeight[i]);
+        }
+
         public Rectangle getOutputPinBounds(int i) {
             int bw = getPatchBorderWidth();
             int sw = getPatchSeparatorWidth();
@@ -308,6 +353,18 @@ public class PaintContext {
                 y += outputHeight[k];
             }
             return new Rectangle(x, y, pw, outputHeight[i]);
+        }
+
+        public Rectangle getOutputNameBounds(int i) {
+            int bw = getPatchBorderWidth();
+            int sw = getPatchSeparatorWidth();
+            int pw = getPinWidth();
+            int x = width - inputWidth - bw - pw;
+            int y = bw + titleHeight + sw;
+            for (int k = 0; k < i; ++k) {
+                y += outputHeight[k];
+            }
+            return new Rectangle(x, y, outputWidth-pw, outputHeight[i]);
         }
     }
 }

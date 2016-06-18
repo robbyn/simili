@@ -268,9 +268,9 @@ public class PaintContext {
             int bw = getPatchBorderWidth();
             int sw = getPatchSeparatorWidth();
             int pw = getPinWidth();
-            inputWidth = columnWidth(inputSize) + pw;
+            inputWidth = columnWidth(inputSize) + pw + sw;
             inputHeight = columnHeight(inputSize);
-            outputWidth = columnWidth(outputSize) + pw;
+            outputWidth = columnWidth(outputSize) + pw + sw;
             outputHeight = columnHeight(outputSize);
             titleWidth = Math.max(titleSize.width,
                     inputWidth + sw + outputWidth);
@@ -335,7 +335,7 @@ public class PaintContext {
             int bw = getPatchBorderWidth();
             int sw = getPatchSeparatorWidth();
             int pw = getPinWidth();
-            int x = bw + pw;
+            int x = bw + pw + sw;
             int y = bw + titleHeight + sw;
             for (int k = 0; k < i; ++k) {
                 y += inputHeight[k];
@@ -359,12 +359,36 @@ public class PaintContext {
             int bw = getPatchBorderWidth();
             int sw = getPatchSeparatorWidth();
             int pw = getPinWidth();
-            int x = width - inputWidth - bw - pw;
+            int x = bw + inputWidth + sw;
             int y = bw + titleHeight + sw;
             for (int k = 0; k < i; ++k) {
                 y += outputHeight[k];
             }
-            return new Rectangle(x, y, outputWidth-pw, outputHeight[i]);
+            return new Rectangle(x, y, outputWidth-pw-sw, outputHeight[i]);
+        }
+
+        public Rectangle getInputBounds(int i) {
+            int bw = getPatchBorderWidth();
+            int sw = getPatchSeparatorWidth();
+            int pw = getPinWidth();
+            int x = bw;
+            int y = bw + titleHeight + sw;
+            for (int k = 0; k < i; ++k) {
+                y += inputHeight[k];
+            }
+            return new Rectangle(x, y, inputWidth, inputHeight[i]);
+        }
+
+        public Rectangle getOutputBounds(int i) {
+            int bw = getPatchBorderWidth();
+            int sw = getPatchSeparatorWidth();
+            int pw = getPinWidth();
+            int x = bw + inputWidth + sw;
+            int y = bw + titleHeight + sw;
+            for (int k = 0; k < i; ++k) {
+                y += outputHeight[k];
+            }
+            return new Rectangle(x, y, outputWidth, outputHeight[i]);
         }
     }
 }

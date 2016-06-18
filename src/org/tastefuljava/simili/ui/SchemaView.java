@@ -31,9 +31,13 @@ public class SchemaView extends JComponent {
     }
 
     private void paintSchema(Graphics2D g) {
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        FontRenderContext frc = g.getFontRenderContext();
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT);
+        FontRenderContext frc = new FontRenderContext(null,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON,
+                RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT);
         PaintContext pc = new PaintContext(frc, props);
         Rectangle rc = g.getClipBounds();
         pc.paint(g, schema, rc.x, rc.y, rc.width, rc.height);

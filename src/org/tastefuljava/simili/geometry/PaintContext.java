@@ -93,6 +93,43 @@ public class PaintContext {
         return rc;
     }
 
+    public Iterable<Patch> filterPatches(int x, int y, int w, int h,
+            Iterable<Patch> patches) {
+        int right = x + w;
+        int bottom = y + h;
+        List<Patch> result = new ArrayList<>();
+        for (Patch patch: patches) {
+            int px = patch.getX();
+            int py = patch.getY();
+            if (px < right && py < bottom) {
+                Dimension dim = patchSize(patch);
+                int pr = px + dim.width;
+                int pb = py + dim.height;
+                if (pr > x && pb > y) {
+                    result.add(patch);
+                }
+            }
+        }
+        return result;
+    }
+
+    public Iterable<Input> filterConnections(int x, int y, int w, int h,
+            Iterable<Patch> patches) {
+        Rectangle visible = new Rectangle(x, y, w, h);
+        List<Input> result = new ArrayList<>();
+        for (Patch patch: patches) {
+            for (Input in: patch.getInputs()) {
+                if (in.isConnected()) {
+                    Rectangle rc = connectionBounds(in);
+                    if (rc.intersects(visible)) {
+                        result.add(in);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
     private PatchMetrics patchMetrics(Patch patch) {
         PatchMetrics metrics = patchMetricsCache.get(patch);
         if (metrics == null) {

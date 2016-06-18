@@ -7,6 +7,8 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import org.tastefuljava.simili.model.Input;
+import org.tastefuljava.simili.model.Output;
 import org.tastefuljava.simili.model.Patch;
 import org.tastefuljava.simili.model.Schema;
 import org.tastefuljava.simili.util.Configuration;
@@ -26,10 +28,11 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
         patch.setTitle("Sample Patch");
         patch.setPosition(20, 20);
         patch.newInput("input 1");
-        patch.newInput("input 2");
+        Input in2 = patch.newInput("input 2");
         patch.newOutput("output 1");
         patch.newOutput("output 2");
-        patch.newOutput("output 3");
+        Output out3 = patch.newOutput("output 3");
+        in2.setSource(out3);
         schema.addPatch(patch);
         schemaView.setSchema(schema);
     }

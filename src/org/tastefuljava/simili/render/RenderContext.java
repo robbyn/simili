@@ -3,6 +3,7 @@ package org.tastefuljava.simili.render;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
@@ -70,27 +71,33 @@ public class RenderContext {
         return pm.getSize();
     }
 
-    public Rectangle inputBounds(Input in) {
+    public Point inputPosition(Input in) {
         Patch patch = in.getPatch();
         PatchMetrics pm = patchMetrics(patch);
-        Rectangle bounds = pm.getInputPinBounds(in.getIndex());
-        bounds.translate(patch.getX(), patch.getY());
-        return bounds;
+        Point pos = pm.getInputPinPosition(in.getIndex());
+        pos.translate(patch.getX(), patch.getY());
+        return pos;
     }
 
-    public Rectangle outputBounds(Output out) {
+    public Point outputPosition(Output out) {
         Patch patch = out.getPatch();
         PatchMetrics pm = patchMetrics(patch);
-        Rectangle bounds = pm.getOutputPinBounds(out.getIndex());
-        bounds.translate(patch.getX(), patch.getY());
-        return bounds;
+        Point pos = pm.getOutputPinPosition(out.getIndex());
+        pos.translate(patch.getX(), patch.getY());
+        return pos;
     }
 
     public Rectangle connectionBounds(Input in) {
-        Rectangle rc = inputBounds(in);
+        Rectangle rc = new Rectangle(inputPosition(in));
         if (in.isConnected()) {
-            rc.add(outputBounds(in.getSource()));
+            rc.add(outputPosition(in.getSource()));
         }
+        int pw = getPinWidth();
+        int halfPw = (pw+1)/2;
+        rc.x -= halfPw;
+        rc.y -= halfPw;
+        rc.width += pw;
+        rc.height += pw;
         return rc;
     }
 
@@ -214,9 +221,9 @@ public class RenderContext {
     }
 
     private void paintConnection(Graphics2D g, Input in, int x, int y) {
-        Rectangle rc = connectionBounds(in);
-        rc.translate(x, y);
-        g.drawLine(rc.x, rc.y, rc.x + rc.width, rc.y + rc.height);
+        Point ip = inputPosition(in);
+        Point op = outputPosition(in.getSource());
+        g.drawLine(x + ip.x, y + ip.y, x + op.x, y + op.y);
     }
 
     private void paintPatches(Graphics2D g, Iterable<Patch> patches,
@@ -235,21 +242,35 @@ public class RenderContext {
         TextLayout layout = new TextLayout(patch.getTitle(),
                 getPatchTitleFont(), frc);
         layout.draw(g, rc.x, rc.y + layout.getAscent());
+        int pw = getPinWidth();
+        int sw = getPatchSeparatorWidth();
         int i = 0;
         for (Input in: patch.getInputs()) {
-            rc = pm.getInputNameBounds(i++);
+            rc = pm.getInputBounds(i++);
             rc.translate(x, y);
             layout = new TextLayout(in.getName(), getPinNameFont(), frc);
-            layout.draw(g, rc.x, rc.y + layout.getAscent());
+            layout.draw(g, rc.x + pw + sw, rc.y + layout.getAscent());
+            drawPin(g, in, rc.x, rc.y + (rc.height-pw)/2, pw, pw);
         }
         i = 0;
         for (Output out: patch.getOutputs()) {
-            rc = pm.getOutputNameBounds(i++);
+            rc = pm.getOutputBounds(i++);
             rc.translate(x, y);
             layout = new TextLayout(out.getName(), getPinNameFont(), frc);
             Rectangle2D tbounds = layout.getBounds();
-            rc.x = rc.x + rc.width - (int)Math.ceil(tbounds.getWidth());
-            layout.draw(g, rc.x, rc.y + layout.getAscent());
+            int tx = rc.x + rc.width - pw - sw
+                    - (int)Math.ceil(tbounds.getWidth());
+            layout.draw(g, tx, rc.y + layout.getAscent());
+            drawPin(g, out, rc.x + rc.width - pw, rc.y + (rc.height-pw)/2,
+                    pw, pw);
+        }
+    }
+
+    private void drawPin(Graphics2D g, Pin pin, int x, int y, int w, int h) {
+        if (pin.isConnected()) {
+            g.fillOval(x, y, w, h);
+        } else {
+            g.drawOval(x, y, w, h);
         }
     }
 
@@ -319,52 +340,16 @@ public class RenderContext {
             return new Rectangle(bw, bw, titleWidth, titleHeight);
         }
 
-        public Rectangle getInputPinBounds(int i) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
+        public Point getInputPinPosition(int i) {
+            Rectangle rc = getInputBounds(i);
             int pw = getPinWidth();
-            int x = bw;
-            int y = bw + titleHeight + sw;
-            for (int k = 0; k < i; ++k) {
-                y += inputHeight[k];
-            }
-            return new Rectangle(x, y, pw, inputHeight[i]);
+            return new Point(rc.x + pw/2, rc.y + rc.height/2);
         }
 
-        public Rectangle getInputNameBounds(int i) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
+        public Point getOutputPinPosition(int i) {
+            Rectangle rc = getOutputBounds(i);
             int pw = getPinWidth();
-            int x = bw + pw + sw;
-            int y = bw + titleHeight + sw;
-            for (int k = 0; k < i; ++k) {
-                y += inputHeight[k];
-            }
-            return new Rectangle(x, y, inputWidth-pw, inputHeight[i]);
-        }
-
-        public Rectangle getOutputPinBounds(int i) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
-            int pw = getPinWidth();
-            int x = width - bw - pw;
-            int y = bw + titleHeight + sw;
-            for (int k = 0; k < i; ++k) {
-                y += outputHeight[k];
-            }
-            return new Rectangle(x, y, pw, outputHeight[i]);
-        }
-
-        public Rectangle getOutputNameBounds(int i) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
-            int pw = getPinWidth();
-            int x = bw + inputWidth + sw;
-            int y = bw + titleHeight + sw;
-            for (int k = 0; k < i; ++k) {
-                y += outputHeight[k];
-            }
-            return new Rectangle(x, y, outputWidth-pw-sw, outputHeight[i]);
+            return new Point(rc.x + rc.width - (pw+1)/2, rc.y + rc.height/2);
         }
 
         public Rectangle getInputBounds(int i) {

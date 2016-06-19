@@ -10,12 +10,14 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Rectangle2D;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.tastefuljava.simili.model.Input;
@@ -24,9 +26,12 @@ import org.tastefuljava.simili.model.Patch;
 import org.tastefuljava.simili.model.Pin;
 import org.tastefuljava.simili.model.Schema;
 
-public class RenderContext {
+public class RenderContext implements Closeable {
     private static final Logger LOG
             = Logger.getLogger(RenderContext.class.getName());
+    private static final ThreadLocal<RenderContext> CURRENT
+            = new ThreadLocal<>();
+
     private final FontRenderContext frc;
     private final Properties props;
     private Font patchTitleFont;
@@ -34,11 +39,37 @@ public class RenderContext {
     private int pinWidth = -1;
     private int patchBorderWidth = -1;
     private int patchSeparatorWidth = -1;
-    private final Map<Patch, PatchMetrics> patchMetricsCache = new WeakHashMap<>();
+    private final Map<Patch, PatchMetrics> patchMetricsCache = new HashMap<>();
 
-    public RenderContext(FontRenderContext frc, Properties props) {
-        this.frc = frc;
+    public static RenderContext open(Properties props, Object aaHint,
+            Object fmHint) {
+        if (CURRENT.get() != null) {
+            throw new IllegalStateException("A RenderContext is already open");
+        }
+        RenderContext rc = new RenderContext(props, aaHint, fmHint);
+        CURRENT.set(rc);
+        return rc;
+    }
+
+    public static RenderContext current() {
+        RenderContext rc = CURRENT.get();
+        if (rc == null) {
+            throw new IllegalStateException("No current RenderContext");
+        }
+        return rc;
+    }
+
+    private RenderContext(Properties props, Object aaHint, Object fmHint) {
+        this.frc = new FontRenderContext(null, aaHint, fmHint);
         this.props = props;
+    }
+
+    @Override
+    public void close() {
+        if (CURRENT.get() != this) {
+            throw new IllegalStateException("Not the current RenderContext");
+        }
+        CURRENT.set(null);
     }
 
     public Font getPatchTitleFont() {

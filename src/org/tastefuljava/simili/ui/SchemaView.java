@@ -11,7 +11,6 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.font.FontRenderContext;
 import static java.lang.Boolean.TRUE;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -38,6 +37,7 @@ public class SchemaView extends JComponent
     private final Properties props = new Properties();
     private Schema schema;
     private Insets margin = new Insets(10, 10, 10, 10);
+    private MouseDragger dragger;
 
     public SchemaView() {
         initialize();
@@ -97,16 +97,19 @@ public class SchemaView extends JComponent
                 TEXT_ANTIALIAS);
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
                 FRACTIONALMETRICS);
-        RenderContext pc = getRenderContext();
-        Rectangle rc = g.getClipBounds();
-        pc.paint(g, schema, rc.x, rc.y, rc.width, rc.height,
-                margin.left, margin.top);
+        try (RenderContext pc = openRenderContext()) {
+            Rectangle rc = g.getClipBounds();
+            pc.paint(g, schema, rc.x, rc.y, rc.width, rc.height,
+                    margin.left, margin.top);
+            if (dragger != null) {
+                dragger.feedback(g);
+            }
+        }
     }
 
-    private RenderContext getRenderContext() {
-        FontRenderContext frc = new FontRenderContext(
-                null, TEXT_ANTIALIAS, FRACTIONALMETRICS);
-        return new RenderContext(frc, getProps());
+    private RenderContext openRenderContext() {
+        return RenderContext.open(getProps(),
+                TEXT_ANTIALIAS, FRACTIONALMETRICS);
     }
 
     @Override
@@ -114,76 +117,92 @@ public class SchemaView extends JComponent
         if (schema == null) {
             return super.getPreferredSize();
         } else {
-            RenderContext pc = getRenderContext();
-            Rectangle rc = pc.getBounds(schema);
-            return new Dimension(rc.width + margin.left + margin.right,
-                    rc.height + margin.top + margin.bottom);
+            try (RenderContext pc = openRenderContext()) {
+                Rectangle rc = pc.getBounds(schema);
+                int width = rc.width + margin.left + margin.right;
+                int height = rc.height + margin.top + margin.bottom;
+                return new Dimension(Math.max(width, getWidth()),
+                        Math.max(height, getHeight()));
+            }
         }
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
         if (schema != null) {
-            Point pt = schema.getLeftTop();
-            RenderContext pc = getRenderContext();
-            pc.hitTest(schema, pt.x + e.getX() - margin.left,
-                    pt.y + e.getY() - margin.top,
-                    new HitTester<Boolean>() {
-                @Override
-                public Boolean patchTitle(Patch patch) {
-                    LOG.log(Level.INFO, "patchTitle [{0}]", patch.getTitle());
-                    return TRUE;
-                }
+            try (final RenderContext pc = openRenderContext()) {
+                hitTest(e.getX(), e.getY(),
+                        new HitTester<Boolean>() {
+                    @Override
+                    public Boolean patchTitle(Patch patch) {
+                        LOG.log(Level.INFO, "patchTitle [{0}]", patch.getTitle());
+                        return TRUE;
+                    }
 
-                @Override
-                public Boolean patch(Patch patch) {
-                    LOG.log(Level.INFO, "patch [{0}]", patch.getTitle());
-                    return TRUE;
-                }
+                    @Override
+                    public Boolean patch(Patch patch) {
+                        LOG.log(Level.INFO, "patch [{0}]", patch.getTitle());
+                        return TRUE;
+                    }
 
-                @Override
-                public Boolean inputPin(Patch patch, Input in) {
-                    LOG.log(Level.INFO, "inputPin [{0}] - [{1}]",
-                            new Object[]{patch.getTitle(), in.getName()});
-                    return TRUE;
-                }
+                    @Override
+                    public Boolean inputPin(Patch patch, Input in) {
+                        LOG.log(Level.INFO, "inputPin [{0}] - [{1}]",
+                                new Object[]{patch.getTitle(), in.getName()});
+                        return TRUE;
+                    }
 
-                @Override
-                public Boolean inputName(Patch patch, Input in) {
-                    LOG.log(Level.INFO, "inputName [{0}] - [{1}]",
-                            new Object[]{patch.getTitle(), in.getName()});
-                    return TRUE;
-                }
+                    @Override
+                    public Boolean inputName(Patch patch, Input in) {
+                        LOG.log(Level.INFO, "inputName [{0}] - [{1}]",
+                                new Object[]{patch.getTitle(), in.getName()});
+                        return TRUE;
+                    }
 
-                @Override
-                public Boolean outputPin(Patch patch, Output out) {
-                    LOG.log(Level.INFO, "outputPin [{0}] - [{1}]",
-                            new Object[]{patch.getTitle(), out.getName()});
-                    return TRUE;
-                }
+                    @Override
+                    public Boolean outputPin(Patch patch, Output out) {
+                        LOG.log(Level.INFO, "outputPin [{0}] - [{1}]",
+                                new Object[]{patch.getTitle(), out.getName()});
+                        return TRUE;
+                    }
 
-                @Override
-                public Boolean outputName(Patch patch, Output out) {
-                    LOG.log(Level.INFO, "outputName [{0}] - [{1}]",
-                            new Object[]{patch.getTitle(), out.getName()});
-                    return TRUE;
-                }
+                    @Override
+                    public Boolean outputName(Patch patch, Output out) {
+                        LOG.log(Level.INFO, "outputName [{0}] - [{1}]",
+                                new Object[]{patch.getTitle(), out.getName()});
+                        return TRUE;
+                    }
 
-                @Override
-                public Boolean background() {
-                    LOG.info("background");
-                    return TRUE;
-                }
-            });
+                    @Override
+                    public Boolean background() {
+                        LOG.info("background");
+                        return TRUE;
+                    }
+                });
+            }
         }
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            e.consume();
+            dragger = dragger(e.getX(), e.getY());
+            if (dragger != null) {
+                dragger.start(e.getX(), e.getY());
+            }
+        }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            e.consume();
+            if (dragger != null) {
+                dragger.stop(e.getX(), e.getY());
+                dragger = null;
+            }
+        }
     }
 
     @Override
@@ -196,6 +215,12 @@ public class SchemaView extends JComponent
 
     @Override
     public void mouseDragged(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            e.consume();
+            if (dragger != null) {
+                dragger.drag(e.getX(), e.getY());
+            }
+        }
     }
 
     @Override
@@ -231,5 +256,129 @@ public class SchemaView extends JComponent
     @Override
     public boolean getScrollableTracksViewportHeight() {
         return false;
+    }
+
+    private MouseDragger dragger(int x, int y) {
+        if (schema == null) {
+            return null;
+        }
+        try (final RenderContext pc = openRenderContext()) {
+            return hitTest(x, y, new HitTester<MouseDragger>() {
+                @Override
+                public MouseDragger patchTitle(Patch patch) {
+                    LOG.warning("patchTitle dragger not supported yet");
+                    return null;
+                }
+
+                @Override
+                public MouseDragger patch(Patch patch) {
+                    return new PatchDragger(patch);
+                }
+
+                @Override
+                public MouseDragger inputPin(Patch patch, Input in) {
+                    LOG.warning("inputPin dragger not supported yet");
+                    return null;
+                }
+
+                @Override
+                public MouseDragger inputName(Patch patch, Input in) {
+                    LOG.warning("inputName dragger not supported yet");
+                    return null;
+                }
+
+                @Override
+                public MouseDragger outputPin(Patch patch, Output out) {
+                    LOG.warning("outputPin dragger not supported yet");
+                    return null;
+                }
+
+                @Override
+                public MouseDragger outputName(Patch patch, Output out) {
+                    LOG.warning("outputName dragger not supported yet");
+                    return null;
+                }
+
+                @Override
+                public MouseDragger background() {
+                    return null;
+                }
+            });
+        }
+    }
+
+    private <T> T hitTest(int x, int y, HitTester<T> tester) {
+        if (schema == null) {
+            return null;
+        }
+        Point pt = component2schema(x, y);
+        RenderContext pc = RenderContext.current();
+        return pc.hitTest(schema, pt.x, pt.y, tester);
+    }
+
+    private Point component2schema(int x, int y) {
+        Point pt;
+        if (schema == null) {
+            pt = new Point(x, y);
+        } else {
+            pt = schema.getLeftTop();
+            pt.translate(x, y);
+        }
+        pt.translate(-margin.left, -margin.top);
+        return pt;
+    }
+
+    private Point schema2component(int x, int y) {
+        Point pt;
+        if (schema == null) {
+            pt = new Point(x, y);
+        } else {
+            pt = schema.getLeftTop();
+            pt.x = x - pt.x;
+            pt.y = y - pt.y;
+        }
+        pt.translate(margin.left, margin.top);
+        return pt;
+    }
+
+    private class PatchDragger implements MouseDragger {
+        private final Patch patch;
+        private Point pos;
+        private Dimension size;
+        private int dx;
+        private int dy;
+
+        public PatchDragger(Patch patch) {
+            this.patch = patch;
+            RenderContext rc = RenderContext.current();
+            size = rc.patchSize(patch);
+            pos = schema2component(patch.getX(), patch.getY());
+        }
+
+        @Override
+        public void start(int x, int y) {
+            dx = pos.x - x;
+            dy = pos.y - y;
+            repaint();
+        }
+
+        @Override
+        public void stop(int x, int y) {
+            drag(x, y);
+            Point pt = component2schema(pos.x, pos.y);
+            patch.setPosition(pt.x, pt.y);
+        }
+
+        @Override
+        public void drag(int x, int y) {
+            pos.x = x + dx;
+            pos.y = y + dy;
+            repaint();
+        }
+
+        @Override
+        public void feedback(Graphics2D g) {
+            g.drawRect(pos.x, pos.y, size.width, size.height);
+        }
     }
 }

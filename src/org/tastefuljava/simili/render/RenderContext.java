@@ -5,8 +5,10 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
+import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -257,7 +259,17 @@ public class RenderContext {
     private void paintConnection(Graphics2D g, Input in, int x, int y) {
         Point ip = inputPosition(in);
         Point op = outputPosition(in.getSource());
-        g.drawLine(x + ip.x, y + ip.y, x + op.x, y + op.y);
+        paintConnection(g, x + ip.x, y + ip.y, x + op.x, y + op.y);
+    }
+
+    private void paintConnection(Graphics2D g, int x1, int y1, int x2, int y2) {
+        if (y1 == y2 || x1 == x2) {
+            g.drawLine(x1, y1, x2, y2);
+        } else {
+            double xc = (x1+x2)/2.0;
+            Shape s = new CubicCurve2D.Double(x1, y1, xc, y1, xc, y2, x2, y2);
+            g.draw(s);
+        }
     }
 
     private void paintPatches(Graphics2D g, Iterable<Patch> patches,

@@ -126,7 +126,8 @@ public class SchemaView extends JComponent
         if (schema != null) {
             Point pt = schema.getLeftTop();
             RenderContext pc = getRenderContext();
-            pc.hitTest(schema, pt.x + e.getX(), pt.y + e.getY(),
+            pc.hitTest(schema, pt.x + e.getX() - margin.left,
+                    pt.y + e.getY() - margin.top,
                     new HitTester<Boolean>() {
                 @Override
                 public Boolean patchTitle(Patch patch) {

@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import org.tastefuljava.simili.model.Input;
 import org.tastefuljava.simili.model.Output;
 import org.tastefuljava.simili.model.Patch;
@@ -98,8 +97,7 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
             Configuration.saveUserSettings(userSettings);
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            Alert.error(this, ex);
         }
     }
 }

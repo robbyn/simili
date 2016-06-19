@@ -18,6 +18,7 @@ import org.tastefuljava.simili.model.Input;
 import org.tastefuljava.simili.model.Output;
 import org.tastefuljava.simili.model.Patch;
 import org.tastefuljava.simili.model.Pin;
+import org.tastefuljava.simili.model.Schema;
 
 public class RenderContext {
     private final FontRenderContext frc;
@@ -101,12 +102,12 @@ public class RenderContext {
         return rc;
     }
 
-    public Iterable<Patch> filterPatches(Iterable<Patch> patches, int x, int y,
+    public Iterable<Patch> filterPatches(Schema schema, int x, int y,
             int w, int h) {
         int right = x + w;
         int bottom = y + h;
         List<Patch> result = new ArrayList<>();
-        for (Patch patch: patches) {
+        for (Patch patch: schema) {
             int px = patch.getX();
             int py = patch.getY();
             if (px < right && py < bottom) {
@@ -121,10 +122,11 @@ public class RenderContext {
         return result;
     }
 
-    public Iterable<Input> filterConnections(Iterable<Patch> patches, int x, int y, int w, int h) {
+    public Iterable<Input> filterConnections(Schema schema, int x, int y,
+            int w, int h) {
         Rectangle visible = new Rectangle(x, y, w, h);
         List<Input> result = new ArrayList<>();
-        for (Patch patch: patches) {
+        for (Patch patch: schema) {
             for (Input in: patch.getInputs()) {
                 if (in.isConnected()) {
                     Rectangle rc = connectionBounds(in);
@@ -137,10 +139,25 @@ public class RenderContext {
         return result;
     }
 
-    public void paint(Graphics2D g, Iterable<Patch> patches, int x, int y,
+    public void paint(Graphics2D g, Schema schema, int x, int y,
             int w, int h) {
-        paintConnections(g, filterConnections(patches, x, y, w, h), x, y);
-        paintPatches(g, filterPatches(patches, x, y, w, h), x, y);
+        paintConnections(g, filterConnections(schema, x, y, w, h), x, y);
+        paintPatches(g, filterPatches(schema, x, y, w, h), x, y);
+    }
+
+    public <T> T hitTest(Schema schema, int x, int y, HitTester<T> tester) {
+        for (Patch patch: schema) {
+            int px = patch.getX();
+            int py = patch.getY();
+            if (px < x && py < y) {
+                PatchMetrics pm = patchMetrics(patch);
+                T result = pm.hitTest(patch, x - px, y - py, tester);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return tester.background();
     }
 
     private PatchMetrics patchMetrics(Patch patch) {
@@ -274,6 +291,37 @@ public class RenderContext {
         }
     }
 
+    private <T> T hitTest(Patch patch, PatchMetrics pm, int x, int y,
+            HitTester<T> tester) {
+        if (x > pm.getWidth() || y > pm.getHeight()) {
+            return null;
+        }
+        Rectangle rc = pm.getTitleBounds();
+        if (rc.contains(x, y)) {
+            return tester.patchTitle(patch);
+        }
+        int bw = getPatchBorderWidth();
+        int sw = getPatchSeparatorWidth();
+        int pw = getPinWidth();
+        if (y > rc.y + rc.height + sw
+                && x >= rc.x && x < rc.x + rc.width) {
+            if (x < rc.x + pm.getInputWidth()) {
+                int i = 0;
+                for (Input in: patch.getInputs()) {
+                    rc = pm.getInputBounds(i++);
+                    if (rc.contains(x, y)) {
+                        if (x < rc.x+pw) {
+                            return tester.inputPin(patch, in);
+                        }
+                    }
+                }
+            } else if (x >= rc.x + rc.width - pm.getOutputWidth()) {
+                
+            }
+        }
+        return tester.patch(patch);
+    }
+
     private class PatchMetrics {
         private final int width;
         private final int height;
@@ -327,8 +375,16 @@ public class RenderContext {
             return new Dimension(titleWidth, titleHeight);
         }
 
+        public int getInputWidth() {
+            return inputWidth;
+        }
+
         public Dimension getInputSize(int i) {
             return new Dimension(inputWidth, inputHeight[i]);
+        }
+
+        public int getOutputWidth() {
+            return outputWidth;
         }
 
         public Dimension getOutputSize(int i) {
@@ -374,6 +430,66 @@ public class RenderContext {
                 y += outputHeight[k];
             }
             return new Rectangle(x, y, outputWidth, outputHeight[i]);
+        }
+
+        public <T> T hitTest(Patch patch, int x, int y, HitTester<T> tester) {
+            int bw = getPatchBorderWidth();
+            int sw = getPatchSeparatorWidth();
+            int pw = getPinWidth();
+            x -= bw;
+            y -= bw;
+            int w = width - 2*bw;
+            int h = height - 2*bw;
+            if (x < 0 || y < 0 || x >= w || y >= h) {
+                return null;
+            }
+            y -= titleHeight;
+            if (y < 0) {
+                return tester.patchTitle(patch);
+            }
+            y -= sw;
+            if (y >= 0) {
+                if (x < inputWidth) {
+                    int i = 0;
+                    for (Input in: patch.getInputs()) {
+                        y -= inputHeight[i++];
+                        if (y < 0) {
+                            if (x < pw) {
+                                return tester.inputPin(patch, in);
+                            } else if (x >= pw + sw) {
+                                return tester.inputName(patch, in);
+                            } else {
+                                break;
+                            }
+                        }
+                        y -= sw;
+                        if (y < 0) {
+                            break;
+                        }
+                    }
+                }
+                x -= inputWidth - sw;
+                if (x >= 0 && x < outputWidth) {
+                    int i = 0;
+                    for (Output out: patch.getOutputs()) {
+                        y -= outputHeight[i++];
+                        if (y < 0) {
+                            if (x >= outputWidth - pw) {
+                                return tester.outputPin(patch, out);
+                            } else if (x < outputWidth - pw - sw) {
+                                return tester.outputName(patch, out);
+                            } else {
+                                break;
+                            }
+                        }
+                        y -= sw;
+                        if (y < 0) {
+                            break;
+                        }
+                    }
+                }
+            }
+            return tester.patch(patch);
         }
     }
 }

@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.URL;
 import java.util.Properties;
 
 public class Configuration {
@@ -39,6 +40,15 @@ public class Configuration {
                 Writer out = new OutputStreamWriter(stream)) {
             props.store(out, "Simili user settings");
         }
+    }
+
+    public static Properties loadProps(URL url) throws IOException {
+        Properties props = new Properties();
+        try (InputStream stream = url.openStream();
+                Reader in = new InputStreamReader(stream, "UTF-8")) {
+            props.load(in);
+        }
+        return props;
     }
 
     private static File userFile() {

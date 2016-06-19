@@ -23,6 +23,17 @@ public class SchemaView extends JComponent {
         repaint();
     }
 
+    public Properties getProps() {
+        Properties result = new Properties();
+        result.putAll(props);
+        return result;
+    }
+
+    public void setProps(Properties newProps) {
+        props.putAll(newProps);
+        repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         if (schema != null) {
@@ -38,7 +49,7 @@ public class SchemaView extends JComponent {
         FontRenderContext frc = new FontRenderContext(null,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON,
                 RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT);
-        RenderContext pc = new RenderContext(frc, props);
+        RenderContext pc = new RenderContext(frc, getProps());
         Rectangle rc = g.getClipBounds();
         pc.paint(g, schema, rc.x, rc.y, rc.width, rc.height);
     }

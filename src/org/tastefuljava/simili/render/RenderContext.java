@@ -160,6 +160,16 @@ public class RenderContext {
         return tester.background();
     }
 
+    public Rectangle getBounds(Schema schema) {
+        Rectangle rc = new Rectangle();
+        for (Patch patch: schema) {
+            PatchMetrics pm = patchMetrics(patch);
+            rc.add(new Rectangle(patch.getX(), patch.getY(),
+                    pm.getWidth(), pm.getHeight()));
+        }
+        return rc;
+    }
+
     private PatchMetrics patchMetrics(Patch patch) {
         PatchMetrics metrics = patchMetricsCache.get(patch);
         if (metrics == null) {

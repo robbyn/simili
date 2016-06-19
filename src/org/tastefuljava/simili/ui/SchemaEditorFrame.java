@@ -49,6 +49,7 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        scrollPane = new javax.swing.JScrollPane();
         schemaView = new org.tastefuljava.simili.ui.SchemaView();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -61,7 +62,15 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.LINE_AXIS));
-        getContentPane().add(schemaView);
+
+        scrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                scrollPaneComponentResized(evt);
+            }
+        });
+        scrollPane.setViewportView(schemaView);
+
+        getContentPane().add(scrollPane);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -74,8 +83,13 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
         saveBounds();
     }//GEN-LAST:event_formComponentResized
 
+    private void scrollPaneComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_scrollPaneComponentResized
+        schemaView.updateSize();
+    }//GEN-LAST:event_scrollPaneComponentResized
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private org.tastefuljava.simili.ui.SchemaView schemaView;
+    private javax.swing.JScrollPane scrollPane;
     // End of variables declaration//GEN-END:variables
 
     private Rectangle defaultBounds() {

@@ -1,6 +1,8 @@
 package org.tastefuljava.simili.ui;
 
 import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -14,6 +16,10 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
 import org.tastefuljava.simili.model.Input;
 import org.tastefuljava.simili.model.Output;
 import org.tastefuljava.simili.model.Patch;
@@ -22,7 +28,7 @@ import org.tastefuljava.simili.model.Schema;
 import org.tastefuljava.simili.render.HitTester;
 
 public class SchemaView extends JComponent
-        implements MouseListener, MouseMotionListener {
+        implements Scrollable, MouseListener, MouseMotionListener {
     private static final Logger LOG
             = Logger.getLogger(SchemaView.class.getName());
     private static final Object TEXT_ANTIALIAS
@@ -64,6 +70,10 @@ public class SchemaView extends JComponent
                 | AWTEvent.MOUSE_MOTION_EVENT_MASK);
     }
 
+    public void updateSize() {
+        revalidate();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         if (schema != null) {
@@ -85,6 +95,17 @@ public class SchemaView extends JComponent
         FontRenderContext frc = new FontRenderContext(
                 null, TEXT_ANTIALIAS, FRACTIONALMETRICS);
         return new RenderContext(frc, getProps());
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        if (schema == null) {
+            return getSize();
+        } else {
+            RenderContext pc = getRenderContext();
+            Rectangle rc = pc.getBounds(schema);
+            return rc.getSize();
+        }
     }
 
     @Override
@@ -163,5 +184,36 @@ public class SchemaView extends JComponent
 
     @Override
     public void mouseMoved(MouseEvent e) {
+    }
+
+    /* Scrollable */
+
+    @Override
+    public Dimension getPreferredScrollableViewportSize() {
+        return getPreferredSize();
+    }
+
+    @Override
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+        if (orientation == SwingConstants.HORIZONTAL) {
+            return visibleRect.width/2;
+        } else {
+            return visibleRect.height/2;
+        }
+    }
+
+    @Override
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+        return 1;
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportWidth() {
+        return false;
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportHeight() {
+        return false;
     }
 }

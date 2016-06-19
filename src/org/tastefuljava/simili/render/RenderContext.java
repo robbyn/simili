@@ -179,6 +179,16 @@ public class RenderContext {
         return rc;
     }
 
+    public void paintConnection(Graphics2D g, int x1, int y1, int x2, int y2) {
+        if (y1 == y2 || x1 == x2) {
+            g.drawLine(x1, y1, x2, y2);
+        } else {
+            double xc = (x1+x2)/2.0;
+            Shape s = new CubicCurve2D.Double(x1, y1, xc, y1, xc, y2, x2, y2);
+            g.draw(s);
+        }
+    }
+
     private PatchMetrics patchMetrics(Patch patch) {
         PatchMetrics metrics = patchMetricsCache.get(patch);
         if (metrics == null) {
@@ -260,16 +270,6 @@ public class RenderContext {
         Point ip = inputPosition(in);
         Point op = outputPosition(in.getSource());
         paintConnection(g, x + ip.x, y + ip.y, x + op.x, y + op.y);
-    }
-
-    private void paintConnection(Graphics2D g, int x1, int y1, int x2, int y2) {
-        if (y1 == y2 || x1 == x2) {
-            g.drawLine(x1, y1, x2, y2);
-        } else {
-            double xc = (x1+x2)/2.0;
-            Shape s = new CubicCurve2D.Double(x1, y1, xc, y1, xc, y2, x2, y2);
-            g.draw(s);
-        }
     }
 
     private void paintPatches(Graphics2D g, Iterable<Patch> patches,

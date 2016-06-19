@@ -23,6 +23,7 @@ import org.tastefuljava.simili.model.Output;
 import org.tastefuljava.simili.model.Patch;
 import org.tastefuljava.simili.render.RenderContext;
 import org.tastefuljava.simili.model.Schema;
+import org.tastefuljava.simili.render.Grabbers;
 import org.tastefuljava.simili.render.HitTester;
 
 public class SchemaView extends JComponent
@@ -187,9 +188,11 @@ public class SchemaView extends JComponent
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
             e.consume();
-            dragger = dragger(e.getX(), e.getY());
-            if (dragger != null) {
-                dragger.start(e.getX(), e.getY());
+            try (RenderContext rc = this.openRenderContext()) {
+                dragger = dragger(e.getX(), e.getY());
+                if (dragger != null) {
+                    dragger.start(e.getX(), e.getY());
+                }
             }
         }
     }
@@ -199,7 +202,9 @@ public class SchemaView extends JComponent
         if (e.getButton() == MouseEvent.BUTTON1) {
             e.consume();
             if (dragger != null) {
-                dragger.stop(e.getX(), e.getY());
+                try (RenderContext rc = this.openRenderContext()) {
+                    dragger.stop(e.getX(), e.getY());
+                }
                 dragger = null;
             }
         }
@@ -218,7 +223,9 @@ public class SchemaView extends JComponent
         if (e.getButton() == MouseEvent.BUTTON1) {
             e.consume();
             if (dragger != null) {
-                dragger.drag(e.getX(), e.getY());
+                try (RenderContext rc = this.openRenderContext()) {
+                    dragger.drag(e.getX(), e.getY());
+                }
             }
         }
     }
@@ -262,49 +269,45 @@ public class SchemaView extends JComponent
         if (schema == null) {
             return null;
         }
-        try (final RenderContext pc = openRenderContext()) {
-            return hitTest(x, y, new HitTester<MouseDragger>() {
-                @Override
-                public MouseDragger patchTitle(Patch patch) {
-                    LOG.warning("patchTitle dragger not supported yet");
-                    return null;
-                }
+        return hitTest(x, y, new HitTester<MouseDragger>() {
+            @Override
+            public MouseDragger patchTitle(Patch patch) {
+                LOG.warning("patchTitle dragger not supported yet");
+                return null;
+            }
 
-                @Override
-                public MouseDragger patch(Patch patch) {
-                    return new PatchDragger(patch);
-                }
+            @Override
+            public MouseDragger patch(Patch patch) {
+                return new PatchDragger(patch);
+            }
 
-                @Override
-                public MouseDragger inputPin(Patch patch, Input in) {
-                    LOG.warning("inputPin dragger not supported yet");
-                    return null;
-                }
+            @Override
+            public MouseDragger inputPin(Patch patch, Input in) {
+                return new InputDragger(in);
+            }
 
-                @Override
-                public MouseDragger inputName(Patch patch, Input in) {
-                    LOG.warning("inputName dragger not supported yet");
-                    return null;
-                }
+            @Override
+            public MouseDragger inputName(Patch patch, Input in) {
+                LOG.warning("inputName dragger not supported yet");
+                return null;
+            }
 
-                @Override
-                public MouseDragger outputPin(Patch patch, Output out) {
-                    LOG.warning("outputPin dragger not supported yet");
-                    return null;
-                }
+            @Override
+            public MouseDragger outputPin(Patch patch, Output out) {
+                return new OutputDragger(out);
+            }
 
-                @Override
-                public MouseDragger outputName(Patch patch, Output out) {
-                    LOG.warning("outputName dragger not supported yet");
-                    return null;
-                }
+            @Override
+            public MouseDragger outputName(Patch patch, Output out) {
+                LOG.warning("outputName dragger not supported yet");
+                return null;
+            }
 
-                @Override
-                public MouseDragger background() {
-                    return null;
-                }
-            });
-        }
+            @Override
+            public MouseDragger background() {
+                return null;
+            }
+        });
     }
 
     private <T> T hitTest(int x, int y, HitTester<T> tester) {
@@ -328,6 +331,10 @@ public class SchemaView extends JComponent
         return pt;
     }
 
+    private Point component2schema(Point pt) {
+        return component2schema(pt.x, pt.y);
+    }
+
     private Point schema2component(int x, int y) {
         Point pt;
         if (schema == null) {
@@ -339,6 +346,90 @@ public class SchemaView extends JComponent
         }
         pt.translate(margin.left, margin.top);
         return pt;
+    }
+
+    private Point schema2component(Point pt) {
+        return schema2component(pt.x, pt.y);
+    }
+
+    private class InputDragger implements MouseDragger {
+        private final Input input;
+        private final Point pinPos;
+        private int x;
+        private int y;
+
+        public InputDragger(Input in) {
+            this.input = in;
+            RenderContext rc = RenderContext.current();
+            pinPos = schema2component(rc.inputPosition(in));
+        }
+
+        @Override
+        public void start(int x, int y) {
+            drag(x, y);
+        }
+
+        @Override
+        public void stop(int x, int y) {
+            drag(x, y);
+            Output out = hitTest(x, y, Grabbers.OUTPUT_GRABBER);
+            if (out != null) {
+                input.setSource(out);
+            }
+        }
+
+        @Override
+        public void drag(int x, int y) {
+            this.x = x;
+            this.y = y;
+            repaint();
+        }
+
+        @Override
+        public void feedback(Graphics2D g) {
+            RenderContext rc = RenderContext.current();
+            rc.paintConnection(g, pinPos.x, pinPos.y, x, y);
+        }
+    }
+
+    private class OutputDragger implements MouseDragger {
+        private final Output output;
+        private final Point pinPos;
+        private int x;
+        private int y;
+
+        public OutputDragger(Output out) {
+            this.output = out;
+            RenderContext rc = RenderContext.current();
+            pinPos = schema2component(rc.outputPosition(out));
+        }
+
+        @Override
+        public void start(int x, int y) {
+            drag(x, y);
+        }
+
+        @Override
+        public void stop(int x, int y) {
+            drag(x, y);
+            Input in = hitTest(x, y, Grabbers.INPUT_GRABBER);
+            if (in != null) {
+                in.setSource(output);
+            }
+        }
+
+        @Override
+        public void drag(int x, int y) {
+            this.x = x;
+            this.y = y;
+            repaint();
+        }
+
+        @Override
+        public void feedback(Graphics2D g) {
+            RenderContext rc = RenderContext.current();
+            rc.paintConnection(g, pinPos.x, pinPos.y, x, y);
+        }
     }
 
     private class PatchDragger implements MouseDragger {

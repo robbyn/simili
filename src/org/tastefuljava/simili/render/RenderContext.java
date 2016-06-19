@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.tastefuljava.simili.model.Input;
 import org.tastefuljava.simili.model.Output;
 import org.tastefuljava.simili.model.Patch;
@@ -21,6 +23,8 @@ import org.tastefuljava.simili.model.Pin;
 import org.tastefuljava.simili.model.Schema;
 
 public class RenderContext {
+    private static final Logger LOG
+            = Logger.getLogger(RenderContext.class.getName());
     private final FontRenderContext frc;
     private final Properties props;
     private Font patchTitleFont;
@@ -140,9 +144,12 @@ public class RenderContext {
     }
 
     public void paint(Graphics2D g, Schema schema, int x, int y,
-            int w, int h) {
-        paintConnections(g, filterConnections(schema, x, y, w, h), x, y);
-        paintPatches(g, filterPatches(schema, x, y, w, h), x, y);
+            int w, int h, int xt, int yt) {
+        Point pt = schema.getLeftTop();
+        int xs = xt-pt.x ;
+        int ys = yt-pt.y;
+        paintConnections(g, filterConnections(schema, x, y, w, h), xs, ys);
+        paintPatches(g, filterPatches(schema, x, y, w, h), xs, ys);
     }
 
     public <T> T hitTest(Schema schema, int x, int y, HitTester<T> tester) {
@@ -261,6 +268,8 @@ public class RenderContext {
     }
 
     private void paintPatch(Graphics2D g, Patch patch, int x, int y) {
+        LOG.log(Level.INFO, "paintPatch {0},{1} [{2}]",
+                new Object[]{x, y, patch.getTitle()});
         PatchMetrics pm = patchMetrics(patch);
         Dimension size = pm.getSize();
         g.drawRect(x, y, size.width, size.height);

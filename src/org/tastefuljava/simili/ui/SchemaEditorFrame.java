@@ -25,7 +25,7 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
         Schema schema = new Schema();
         Patch patch = new Patch();
         patch.setTitle("Sample Patch");
-        patch.setPosition(20, 20);
+        patch.setPosition(-20, -20);
         patch.newInput("input 1");
         Input in2 = patch.newInput("input 2");
         patch.newOutput("output 1");

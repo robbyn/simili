@@ -1,10 +1,11 @@
 package org.tastefuljava.simili.ui;
 
 import java.awt.AWTEvent;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
@@ -16,8 +17,6 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import javax.swing.JScrollPane;
-import javax.swing.JViewport;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import org.tastefuljava.simili.model.Input;
@@ -38,9 +37,21 @@ public class SchemaView extends JComponent
 
     private final Properties props = new Properties();
     private Schema schema;
+    private Insets margin = new Insets(10, 10, 10, 10);
 
     public SchemaView() {
         initialize();
+    }
+
+    public Insets getMargin() {
+        return margin;
+    }
+
+    public void setMargin(Insets newValue) {
+        if (newValue != null) {
+            margin = newValue;
+            updateSize();
+        }
     }
 
     public Schema getSchema() {
@@ -88,7 +99,8 @@ public class SchemaView extends JComponent
                 FRACTIONALMETRICS);
         RenderContext pc = getRenderContext();
         Rectangle rc = g.getClipBounds();
-        pc.paint(g, schema, rc.x, rc.y, rc.width, rc.height);
+        pc.paint(g, schema, rc.x, rc.y, rc.width, rc.height,
+                margin.left, margin.top);
     }
 
     private RenderContext getRenderContext() {
@@ -100,19 +112,22 @@ public class SchemaView extends JComponent
     @Override
     public Dimension getPreferredSize() {
         if (schema == null) {
-            return getSize();
+            return super.getPreferredSize();
         } else {
             RenderContext pc = getRenderContext();
             Rectangle rc = pc.getBounds(schema);
-            return rc.getSize();
+            return new Dimension(rc.width + margin.left + margin.right,
+                    rc.height + margin.top + margin.bottom);
         }
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
         if (schema != null) {
+            Point pt = schema.getLeftTop();
             RenderContext pc = getRenderContext();
-            pc.hitTest(schema, e.getX(), e.getY(), new HitTester<Boolean>() {
+            pc.hitTest(schema, pt.x + e.getX(), pt.y + e.getY(),
+                    new HitTester<Boolean>() {
                 @Override
                 public Boolean patchTitle(Patch patch) {
                     LOG.log(Level.INFO, "patchTitle [{0}]", patch.getTitle());

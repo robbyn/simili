@@ -1,4 +1,4 @@
-package org.tastefuljava.simili.model;
+package org.tastefuljava.simuli.model;
 
 public class Input extends Pin {
     private Output source;

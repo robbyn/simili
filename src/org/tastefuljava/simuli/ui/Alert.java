@@ -1,4 +1,4 @@
-package org.tastefuljava.simili.ui;
+package org.tastefuljava.simuli.ui;
 
 import java.awt.Component;
 import javax.swing.JOptionPane;

@@ -1,5 +1,8 @@
-package org.tastefuljava.simili.ui;
+package org.tastefuljava.simuli.ui;
 
+import org.tastefuljava.simuli.ui.dragger.PatchDragger;
+import org.tastefuljava.simuli.ui.dragger.InputDragger;
+import org.tastefuljava.simuli.ui.dragger.OutputDragger;
 import java.awt.AWTEvent;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -18,13 +21,14 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
-import org.tastefuljava.simili.model.Input;
-import org.tastefuljava.simili.model.Output;
-import org.tastefuljava.simili.model.Patch;
-import org.tastefuljava.simili.render.RenderContext;
-import org.tastefuljava.simili.model.Schema;
-import org.tastefuljava.simili.render.Grabbers;
-import org.tastefuljava.simili.render.HitTester;
+import org.tastefuljava.simuli.model.Input;
+import org.tastefuljava.simuli.model.Output;
+import org.tastefuljava.simuli.model.Patch;
+import org.tastefuljava.simuli.model.Pin;
+import org.tastefuljava.simuli.render.RenderContext;
+import org.tastefuljava.simuli.model.Schema;
+import org.tastefuljava.simuli.render.Grabbers;
+import org.tastefuljava.simuli.render.HitTester;
 
 public class SchemaView extends JComponent
         implements Scrollable, MouseListener, MouseMotionListener {
@@ -73,6 +77,44 @@ public class SchemaView extends JComponent
     public void setProps(Properties newProps) {
         props.putAll(newProps);
         repaint();
+    }
+
+    public <T> T hitTest(int x, int y, HitTester<T> tester) {
+        if (schema == null) {
+            return null;
+        }
+        Point pt = component2schema(x, y);
+        RenderContext pc = RenderContext.current();
+        return pc.hitTest(schema, pt.x, pt.y, tester);
+    }
+
+    public Point component2schema(int x, int y) {
+        Point pt;
+        if (schema == null) {
+            pt = new Point(x, y);
+        } else {
+            pt = schema.getLeftTop();
+            pt.translate(x, y);
+        }
+        pt.translate(-margin.left, -margin.top);
+        return pt;
+    }
+
+    public Point schema2component(int x, int y) {
+        Point pt;
+        if (schema == null) {
+            pt = new Point(x, y);
+        } else {
+            pt = schema.getLeftTop();
+            pt.x = x - pt.x;
+            pt.y = y - pt.y;
+        }
+        pt.translate(margin.left, margin.top);
+        return pt;
+    }
+
+    public Point schema2component(Point pt) {
+        return schema2component(pt.x, pt.y);
     }
 
     private void initialize() {
@@ -191,6 +233,8 @@ public class SchemaView extends JComponent
             try (RenderContext rc = this.openRenderContext()) {
                 dragger = dragger(e.getX(), e.getY());
                 if (dragger != null) {
+                    LOG.log(Level.INFO, "start {0},{1}",
+                            new Object[]{e.getX(), e.getY()});
                     dragger.start(e.getX(), e.getY());
                 }
             }
@@ -220,12 +264,12 @@ public class SchemaView extends JComponent
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON1) {
+        if (dragger != null) {
             e.consume();
-            if (dragger != null) {
-                try (RenderContext rc = this.openRenderContext()) {
-                    dragger.drag(e.getX(), e.getY());
-                }
+            LOG.log(Level.INFO, "mouseDragged {0},{1}",
+                    new Object[]{e.getX(), e.getY()});
+            try (RenderContext rc = this.openRenderContext()) {
+                dragger.drag(e.getX(), e.getY());
             }
         }
     }
@@ -271,205 +315,20 @@ public class SchemaView extends JComponent
         }
         return hitTest(x, y, new HitTester<MouseDragger>() {
             @Override
-            public MouseDragger patchTitle(Patch patch) {
-                LOG.warning("patchTitle dragger not supported yet");
-                return null;
-            }
-
-            @Override
             public MouseDragger patch(Patch patch) {
-                return new PatchDragger(patch);
+                return new PatchDragger(patch, org.tastefuljava.simuli.ui.SchemaView.this);
             }
 
             @Override
             public MouseDragger inputPin(Patch patch, Input in) {
-                return new InputDragger(in);
-            }
-
-            @Override
-            public MouseDragger inputName(Patch patch, Input in) {
-                LOG.warning("inputName dragger not supported yet");
-                return null;
+                return new InputDragger(SchemaView.this, in);
             }
 
             @Override
             public MouseDragger outputPin(Patch patch, Output out) {
-                return new OutputDragger(out);
-            }
-
-            @Override
-            public MouseDragger outputName(Patch patch, Output out) {
-                LOG.warning("outputName dragger not supported yet");
-                return null;
-            }
-
-            @Override
-            public MouseDragger background() {
-                return null;
+                return new OutputDragger(SchemaView.this, out);
             }
         });
     }
 
-    private <T> T hitTest(int x, int y, HitTester<T> tester) {
-        if (schema == null) {
-            return null;
-        }
-        Point pt = component2schema(x, y);
-        RenderContext pc = RenderContext.current();
-        return pc.hitTest(schema, pt.x, pt.y, tester);
-    }
-
-    private Point component2schema(int x, int y) {
-        Point pt;
-        if (schema == null) {
-            pt = new Point(x, y);
-        } else {
-            pt = schema.getLeftTop();
-            pt.translate(x, y);
-        }
-        pt.translate(-margin.left, -margin.top);
-        return pt;
-    }
-
-    private Point component2schema(Point pt) {
-        return component2schema(pt.x, pt.y);
-    }
-
-    private Point schema2component(int x, int y) {
-        Point pt;
-        if (schema == null) {
-            pt = new Point(x, y);
-        } else {
-            pt = schema.getLeftTop();
-            pt.x = x - pt.x;
-            pt.y = y - pt.y;
-        }
-        pt.translate(margin.left, margin.top);
-        return pt;
-    }
-
-    private Point schema2component(Point pt) {
-        return schema2component(pt.x, pt.y);
-    }
-
-    private class InputDragger implements MouseDragger {
-        private final Input input;
-        private final Point pinPos;
-        private int x;
-        private int y;
-
-        public InputDragger(Input in) {
-            this.input = in;
-            RenderContext rc = RenderContext.current();
-            pinPos = schema2component(rc.inputPosition(in));
-        }
-
-        @Override
-        public void start(int x, int y) {
-            drag(x, y);
-        }
-
-        @Override
-        public void stop(int x, int y) {
-            drag(x, y);
-            Output out = hitTest(x, y, Grabbers.OUTPUT_GRABBER);
-            if (out != null) {
-                input.setSource(out);
-            }
-        }
-
-        @Override
-        public void drag(int x, int y) {
-            this.x = x;
-            this.y = y;
-            repaint();
-        }
-
-        @Override
-        public void feedback(Graphics2D g) {
-            RenderContext rc = RenderContext.current();
-            rc.paintConnection(g, pinPos.x, pinPos.y, x, y);
-        }
-    }
-
-    private class OutputDragger implements MouseDragger {
-        private final Output output;
-        private final Point pinPos;
-        private int x;
-        private int y;
-
-        public OutputDragger(Output out) {
-            this.output = out;
-            RenderContext rc = RenderContext.current();
-            pinPos = schema2component(rc.outputPosition(out));
-        }
-
-        @Override
-        public void start(int x, int y) {
-            drag(x, y);
-        }
-
-        @Override
-        public void stop(int x, int y) {
-            drag(x, y);
-            Input in = hitTest(x, y, Grabbers.INPUT_GRABBER);
-            if (in != null) {
-                in.setSource(output);
-            }
-        }
-
-        @Override
-        public void drag(int x, int y) {
-            this.x = x;
-            this.y = y;
-            repaint();
-        }
-
-        @Override
-        public void feedback(Graphics2D g) {
-            RenderContext rc = RenderContext.current();
-            rc.paintConnection(g, pinPos.x, pinPos.y, x, y);
-        }
-    }
-
-    private class PatchDragger implements MouseDragger {
-        private final Patch patch;
-        private Point pos;
-        private Dimension size;
-        private int dx;
-        private int dy;
-
-        public PatchDragger(Patch patch) {
-            this.patch = patch;
-            RenderContext rc = RenderContext.current();
-            size = rc.patchSize(patch);
-            pos = schema2component(patch.getX(), patch.getY());
-        }
-
-        @Override
-        public void start(int x, int y) {
-            dx = pos.x - x;
-            dy = pos.y - y;
-            repaint();
-        }
-
-        @Override
-        public void stop(int x, int y) {
-            drag(x, y);
-            Point pt = component2schema(pos.x, pos.y);
-            patch.setPosition(pt.x, pt.y);
-        }
-
-        @Override
-        public void drag(int x, int y) {
-            pos.x = x + dx;
-            pos.y = y + dy;
-            repaint();
-        }
-
-        @Override
-        public void feedback(Graphics2D g) {
-            g.drawRect(pos.x, pos.y, size.width, size.height);
-        }
-    }
 }

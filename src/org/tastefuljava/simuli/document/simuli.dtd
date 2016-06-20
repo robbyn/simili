@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Usage:
+<!DOCTYPE schema PUBLIC "-//tastefuljava.org//Simuli Document 1.0//EN"
+        "simuli.dtd">
+-->
+
+<!ELEMENT schema (patch|link)*>
+<!ATTLIST schema title CDATA #IMPLIED>
+
+<!ELEMENT patch (input*,output*)>
+<!ATTLIST patch
+    id ID #IMPLIED
+    type CDATA #IMPLIED
+    title CDATA #REQUIRED
+    x CDATA #REQUIRED
+    y CDATA #REQUIRED
+>
+
+<!ELEMENT input EMPTY>
+<!ATTLIST input
+    id ID #IMPLIED
+    name CDATA #REQUIRED
+>
+
+<!ELEMENT output EMPTY>
+<!ATTLIST output
+    id ID #IMPLIED
+    name CDATA #REQUIRED
+>
+
+<!ELEMENT link EMPTY>
+<!ATTLIST link
+    from IDREF #REQUIRED
+    to IDREFS #REQUIRED
+>

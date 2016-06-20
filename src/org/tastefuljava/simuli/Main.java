@@ -1,10 +1,10 @@
-package org.tastefuljava.simili;
+package org.tastefuljava.simuli;
 
 import java.awt.EventQueue;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.tastefuljava.simili.ui.SchemaEditorFrame;
+import org.tastefuljava.simuli.ui.SchemaEditorFrame;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class.getName());

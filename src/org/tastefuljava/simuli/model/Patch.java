@@ -1,4 +1,4 @@
-package org.tastefuljava.simili.model;
+package org.tastefuljava.simuli.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -10,6 +10,25 @@ public class Patch implements Serializable {
     private int y;
     private final List<Input> inputs = new ArrayList<>();
     private final List<Output> outputs = new ArrayList<>();
+
+    public Patch() {
+    }
+
+    Patch(Patch other) {
+        assign(other);
+    }
+
+    private void assign(Patch other) {
+        title = other.getTitle();
+        x = other.getX();
+        y = other.getY();
+        for (Input in: other.getInputs()) {
+            newInput(in.getName());
+        }
+        for (Output out: other.getOutputs()) {
+            newOutput(out.getName());
+        }
+    }
 
     public String getTitle() {
         return title;

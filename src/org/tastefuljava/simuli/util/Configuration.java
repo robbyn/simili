@@ -1,4 +1,4 @@
-package org.tastefuljava.simili.util;
+package org.tastefuljava.simuli.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,8 +51,12 @@ public class Configuration {
         return props;
     }
 
+    public static File userHome() {
+        return new File(System.getProperty("user.home"));
+    }
+
     private static File userFile() {
-        File home = new File(System.getProperty("user.home"));
+        File home = userHome();
         File dir = new File(home, ".simili");
         dir.mkdir();
         return new File(dir, "settings.properties");

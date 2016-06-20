@@ -1,4 +1,4 @@
-package org.tastefuljava.simili.model;
+package org.tastefuljava.simuli.model;
 
 import java.util.HashSet;
 import java.util.Set;

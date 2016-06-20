@@ -1,4 +1,4 @@
-package org.tastefuljava.simili.render;
+package org.tastefuljava.simuli.render;
 
 import java.awt.Dimension;
 import java.awt.Font;
@@ -11,20 +11,20 @@ import java.awt.font.TextLayout;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Rectangle2D;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.tastefuljava.simili.model.Input;
-import org.tastefuljava.simili.model.Output;
-import org.tastefuljava.simili.model.Patch;
-import org.tastefuljava.simili.model.Pin;
-import org.tastefuljava.simili.model.Schema;
+import org.tastefuljava.simuli.model.Input;
+import org.tastefuljava.simuli.model.Output;
+import org.tastefuljava.simuli.model.Patch;
+import org.tastefuljava.simuli.model.Pin;
+import org.tastefuljava.simuli.model.Schema;
 
 public class RenderContext implements Closeable {
     private static final Logger LOG
@@ -39,7 +39,8 @@ public class RenderContext implements Closeable {
     private int pinWidth = -1;
     private int patchBorderWidth = -1;
     private int patchSeparatorWidth = -1;
-    private final Map<Patch, PatchMetrics> patchMetricsCache = new HashMap<>();
+    private final Map<Patch, PatchMetrics> patchMetricsCache
+            = new IdentityHashMap<>();
 
     public static RenderContext open(Properties props, Object aaHint,
             Object fmHint) {
@@ -139,12 +140,12 @@ public class RenderContext implements Closeable {
         return rc;
     }
 
-    public Iterable<Patch> filterPatches(Schema schema, int x, int y,
+    public Iterable<Patch> filterPatches(Iterable<Patch> patches, int x, int y,
             int w, int h) {
         int right = x + w;
         int bottom = y + h;
         List<Patch> result = new ArrayList<>();
-        for (Patch patch: schema) {
+        for (Patch patch: patches) {
             int px = patch.getX();
             int py = patch.getY();
             if (px < right && py < bottom) {
@@ -159,11 +160,11 @@ public class RenderContext implements Closeable {
         return result;
     }
 
-    public Iterable<Input> filterConnections(Schema schema, int x, int y,
-            int w, int h) {
+    public Iterable<Input> filterConnections(Iterable<Patch> patches,
+            int x, int y, int w, int h) {
         Rectangle visible = new Rectangle(x, y, w, h);
         List<Input> result = new ArrayList<>();
-        for (Patch patch: schema) {
+        for (Patch patch: patches) {
             for (Input in: patch.getInputs()) {
                 if (in.isConnected()) {
                     Rectangle rc = connectionBounds(in);
@@ -181,12 +182,12 @@ public class RenderContext implements Closeable {
         Point pt = schema.getLeftTop();
         int xs = xt-pt.x ;
         int ys = yt-pt.y;
-        paintConnections(g, filterConnections(schema, x, y, w, h), xs, ys);
-        paintPatches(g, filterPatches(schema, x, y, w, h), xs, ys);
+        paintConnections(g, filterConnections(schema.patches(), x, y, w, h), xs, ys);
+        paintPatches(g, filterPatches(schema.patches(), x, y, w, h), xs, ys);
     }
 
     public <T> T hitTest(Schema schema, int x, int y, HitTester<T> tester) {
-        for (Patch patch: schema) {
+        for (Patch patch: schema.descending()) {
             int px = patch.getX();
             int py = patch.getY();
             if (px < x && py < y) {
@@ -202,7 +203,7 @@ public class RenderContext implements Closeable {
 
     public Rectangle getBounds(Schema schema) {
         Rectangle rc = new Rectangle();
-        for (Patch patch: schema) {
+        for (Patch patch: schema.patches()) {
             PatchMetrics pm = patchMetrics(patch);
             rc.add(new Rectangle(patch.getX(), patch.getY(),
                     pm.getWidth(), pm.getHeight()));

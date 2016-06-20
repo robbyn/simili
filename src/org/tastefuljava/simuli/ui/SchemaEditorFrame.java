@@ -198,14 +198,27 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
                             file.getName() + DOC_EXT);
                 }
                 DocumentIO.store(schemaView.getSchema(), file);
-                currentFile = file;
-                saveCurrentDir(chooser.getCurrentDirectory());
+                saveCurrent(chooser.getCurrentDirectory(), file);
             }
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
             Alert.error(this, ex);
         }
     }//GEN-LAST:event_saveAsItemActionPerformed
+
+    private File currentDir() {
+        String s = userSettings.getProperty(PROP_CURRENTDIR);
+        if (s == null) {
+            return Configuration.userHome();
+        }
+        return new File(s);
+    }
+
+    private void saveCurrent(File dir, File file) {
+        currentFile = file;
+        userSettings.setProperty(PROP_CURRENTDIR, dir.getAbsolutePath());
+        saveUserSettings();
+    }
 
     private void openItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openItemActionPerformed
         try {
@@ -227,8 +240,7 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
             if (JFileChooser.APPROVE_OPTION == chooser.showOpenDialog(this)) {
                 File file = chooser.getSelectedFile();
                 schemaView.setSchema(DocumentIO.load(file));
-                currentFile = file;
-                saveCurrentDir(chooser.getCurrentDirectory());
+                saveCurrent(chooser.getCurrentDirectory(), file);
             }
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, null, ex);
@@ -261,19 +273,6 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
         }
         inspector.setVisible(!inspector.isVisible());
     }//GEN-LAST:event_inspectorItemActionPerformed
-
-    private File currentDir() {
-        String s = userSettings.getProperty(PROP_CURRENTDIR);
-        if (s == null) {
-            return Configuration.userHome();
-        }
-        return new File(s);
-    }
-
-    private void saveCurrentDir(File dir) {
-        userSettings.setProperty(PROP_CURRENTDIR, dir.getAbsolutePath());
-        saveUserSettings();
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu fileMenu;

@@ -24,11 +24,10 @@ import javax.swing.SwingConstants;
 import org.tastefuljava.simuli.model.Input;
 import org.tastefuljava.simuli.model.Output;
 import org.tastefuljava.simuli.model.Patch;
-import org.tastefuljava.simuli.model.Pin;
 import org.tastefuljava.simuli.render.RenderContext;
 import org.tastefuljava.simuli.model.Schema;
-import org.tastefuljava.simuli.render.Grabbers;
 import org.tastefuljava.simuli.render.HitTester;
+import org.tastefuljava.simuli.util.ListenerList;
 
 public class SchemaView extends JComponent
         implements Scrollable, MouseListener, MouseMotionListener {
@@ -43,6 +42,10 @@ public class SchemaView extends JComponent
     private Schema schema;
     private Insets margin = new Insets(10, 10, 10, 10);
     private MouseDragger dragger;
+    private final ListenerList listeners = new ListenerList();
+    private final SelectionListener selectionNotifier
+            = listeners.getNotifier(SelectionListener.class);
+    private Patch selection;
 
     public SchemaView() {
         initialize();
@@ -117,6 +120,14 @@ public class SchemaView extends JComponent
         return schema2component(pt.x, pt.y);
     }
 
+    public void addSelectionListener(SelectionListener listener) {
+        listeners.addListener(listener);
+    }
+
+    public void removeSelectionListener(SelectionListener listener) {
+        listeners.removeListener(listener);
+    }
+
     private void initialize() {
         addMouseListener(this);
         addMouseMotionListener(this);
@@ -178,13 +189,17 @@ public class SchemaView extends JComponent
                         new HitTester<Boolean>() {
                     @Override
                     public Boolean patchTitle(Patch patch) {
-                        LOG.log(Level.INFO, "patchTitle [{0}]", patch.getTitle());
+                        selection = patch;
+                        selectionNotifier.selectionChanged(
+                                new Patch[] {selection});
                         return TRUE;
                     }
 
                     @Override
                     public Boolean patch(Patch patch) {
-                        LOG.log(Level.INFO, "patch [{0}]", patch.getTitle());
+                        selection = patch;
+                        selectionNotifier.selectionChanged(
+                                new Patch[] {selection});
                         return TRUE;
                     }
 

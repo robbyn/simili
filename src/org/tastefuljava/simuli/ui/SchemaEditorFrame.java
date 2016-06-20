@@ -26,7 +26,6 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
     private Properties userSettings;
     private File currentFile;
-    private InspectorDialog inspector;
 
     public SchemaEditorFrame() {
         initComponents();
@@ -51,6 +50,16 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
         in2.setSource(out3);
         schema.addPatch(patch);
         schemaView.setSchema(schema);
+        schemaView.addSelectionListener(new SelectionListener() {
+            @Override
+            public void selectionChanged(Patch[] selection) {
+                if (selection == null || selection.length == 0) {
+                    inspector.bindPatch(null);
+                } else {
+                    inspector.bindPatch(selection[0]);
+                }
+            }
+        });
     }
 
     public void display() throws IOException {
@@ -68,6 +77,7 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         scrollPane = new javax.swing.JScrollPane();
         schemaView = new org.tastefuljava.simuli.ui.SchemaView();
+        inspector = new org.tastefuljava.simuli.ui.InspectorPanel();
         menuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         openItem = new javax.swing.JMenuItem();
@@ -86,7 +96,6 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
                 formComponentMoved(evt);
             }
         });
-        getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.LINE_AXIS));
 
         scrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
             public void componentResized(java.awt.event.ComponentEvent evt) {
@@ -95,16 +104,17 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
         });
         scrollPane.setViewportView(schemaView);
 
-        getContentPane().add(scrollPane);
+        getContentPane().add(scrollPane, java.awt.BorderLayout.CENTER);
+        getContentPane().add(inspector, java.awt.BorderLayout.EAST);
 
         fileMenu.setText("File");
         fileMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                fileMenuMenuSelected(evt);
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                fileMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
         });
 
@@ -137,12 +147,12 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         viewMenu.setText("View");
         viewMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                viewMenuMenuSelected(evt);
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                viewMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
         });
 
@@ -264,18 +274,16 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_fileMenuMenuSelected
 
     private void viewMenuMenuSelected(javax.swing.event.MenuEvent evt) {//GEN-FIRST:event_viewMenuMenuSelected
-        inspectorItem.setSelected(inspector != null && inspector.isVisible());
+        inspectorItem.setSelected(inspector.isVisible());
     }//GEN-LAST:event_viewMenuMenuSelected
 
     private void inspectorItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_inspectorItemActionPerformed
-        if (inspector == null) {
-            inspector = new InspectorDialog(this, false);
-        }
         inspector.setVisible(!inspector.isVisible());
     }//GEN-LAST:event_inspectorItemActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu fileMenu;
+    private org.tastefuljava.simuli.ui.InspectorPanel inspector;
     private javax.swing.JCheckBoxMenuItem inspectorItem;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JMenuBar menuBar;

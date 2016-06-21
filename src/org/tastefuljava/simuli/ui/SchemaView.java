@@ -42,10 +42,11 @@ public class SchemaView extends JComponent
     private Schema schema;
     private Insets margin = new Insets(10, 10, 10, 10);
     private MouseDragger dragger;
+    private Patch selection;
+
     private final ListenerList listeners = new ListenerList();
     private final SelectionListener selectionNotifier
             = listeners.getNotifier(SelectionListener.class);
-    private Patch selection;
 
     public SchemaView() {
         initialize();

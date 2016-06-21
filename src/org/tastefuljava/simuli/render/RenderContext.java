@@ -14,7 +14,6 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -39,8 +38,7 @@ public class RenderContext implements Closeable {
     private int pinWidth = -1;
     private int patchBorderWidth = -1;
     private int patchSeparatorWidth = -1;
-    private final Map<Patch, PatchMetrics> patchMetricsCache
-            = new IdentityHashMap<>();
+    private final Map<Patch, PatchMetrics> patchMetricsCache = new HashMap<>();
 
     public static RenderContext open(Properties props, Object aaHint,
             Object fmHint) {
@@ -94,7 +92,7 @@ public class RenderContext implements Closeable {
 
     public int getPatchSeparatorWidth() {
         return patchSeparatorWidth = requireInt(patchSeparatorWidth,
-                "patch-border-width", 1);
+                "patch-border-width", 3);
     }
 
     public Dimension patchTitleSize(String title) {
@@ -329,7 +327,9 @@ public class RenderContext implements Closeable {
             rc = pm.getInputBounds(i++);
             rc.translate(x, y);
             layout = new TextLayout(in.getName(), getPinNameFont(), frc);
-            layout.draw(g, rc.x + pw + sw, rc.y + layout.getAscent());
+            Rectangle2D bounds = layout.getBounds();
+            layout.draw(g, rc.x + pw + sw,
+                    rc.y + layout.getAscent());
             drawPin(g, in, rc.x, rc.y + (rc.height-pw)/2, pw, pw);
         }
         i = 0;

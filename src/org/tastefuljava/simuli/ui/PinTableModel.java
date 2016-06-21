@@ -77,6 +77,7 @@ public class PinTableModel extends AbstractTableModel {
         switch (columnIndex) {
             case COL_NAME:
                 pins.get(rowIndex).setName(aValue + "");
+                this.fireTableCellUpdated(rowIndex, columnIndex);
                 break;
         }
     }   

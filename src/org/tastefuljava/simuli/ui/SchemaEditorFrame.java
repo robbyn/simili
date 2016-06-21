@@ -53,11 +53,14 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
         schemaView.addSelectionListener(new SelectionListener() {
             @Override
             public void selectionChanged(Patch[] selection) {
-                if (selection == null || selection.length == 0) {
-                    inspector.bindPatch(null);
-                } else {
-                    inspector.bindPatch(selection[0]);
-                }
+                inspector.setSelection(selection);
+            }
+        });
+        inspector.addChangeListener(new ChangeListener() {
+            @Override
+            public void dataChanged() {
+                schemaView.updateSize();
+                schemaView.repaint();
             }
         });
     }
@@ -89,11 +92,11 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent evt) {
-                formComponentResized(evt);
-            }
             public void componentMoved(java.awt.event.ComponentEvent evt) {
                 formComponentMoved(evt);
+            }
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                formComponentResized(evt);
             }
         });
 
@@ -109,12 +112,12 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         fileMenu.setText("File");
         fileMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                fileMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                fileMenuMenuSelected(evt);
             }
         });
 
@@ -147,12 +150,12 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         viewMenu.setText("View");
         viewMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                viewMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                viewMenuMenuSelected(evt);
             }
         });
 

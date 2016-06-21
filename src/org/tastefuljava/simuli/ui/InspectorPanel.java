@@ -1,68 +1,45 @@
 package org.tastefuljava.simuli.ui;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.table.TableModel;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
+import java.awt.CardLayout;
 import org.tastefuljava.simuli.model.Patch;
+import org.tastefuljava.simuli.util.ListenerList;
 
 public class InspectorPanel extends javax.swing.JPanel {
-    private static final Logger LOG
-            = Logger.getLogger(InspectorPanel.class.getName());
+    private final ListenerList listeners = new ListenerList();
+    private final ChangeListener changeNotifier
+            = listeners.getNotifier(ChangeListener.class);
 
-    private Patch patch;
+    private final CardLayout layout;
 
     public InspectorPanel() {
         initComponents();
-        title.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                changed(e.getDocument());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                changed(e.getDocument());
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                changed(e.getDocument());
-            }
-
-            private void changed(Document doc) {
-                try {
-                    titleChanged(doc.getText(0, doc.getLength()));
-                } catch (BadLocationException ex) {
-                    LOG.log(Level.SEVERE, null, ex);
-                }
-            }
-        });
+        layout = getCardLayout();
+        patchPanel.addChangeListener(changeNotifier);
+        setSelection(null);
     }
 
-    void bindPatch(Patch patch) {
-        this.patch = patch;
-        TableModel inputModel;
-        TableModel outputModel;
-        if (patch == null) {
-            title.setText("");
-            inputModel = new PinTableModel(null);
-            outputModel = new PinTableModel(null);
+    private CardLayout getCardLayout() {
+        return (CardLayout)getLayout();
+    }
+
+    public void addChangeListener(ChangeListener listener) {
+        listeners.addListener(listener);
+    }
+
+    public void removeChangeListener(ChangeListener listener) {
+        listeners.removeListener(listener);
+    }
+
+    public final void setSelection(Patch[] selection) {
+        if (selection == null || selection.length == 0) {
+            patchPanel.bindPatch(null);
+            layout.show(this, "none");
+        } else if (selection.length == 1) {
+            patchPanel.bindPatch(selection[0]);
+            layout.show(this, "patch");
         } else {
-            title.setText(patch.getTitle());
-            inputModel = new PinTableModel(patch.getInputs());
-            outputModel = new PinTableModel(patch.getOutputs());
-        }
-        inputTable.setModel(inputModel);
-        outputTable.setModel(outputModel);
-    }
-
-    private void titleChanged(String newValue) {
-        if (patch != null) {
-            patch.setTitle(newValue);
+            patchPanel.bindPatch(null);
+            layout.show(this, "multiple");
         }
     }
 
@@ -71,104 +48,56 @@ public class InspectorPanel extends javax.swing.JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        patchPanel = new javax.swing.JPanel();
+        patchPanel = new org.tastefuljava.simuli.ui.PatchInspectorPanel();
+        jPanel1 = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
+        jPanel3 = new javax.swing.JPanel();
+        jPanel4 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
-        title = new javax.swing.JTextField();
-        jLabel3 = new javax.swing.JLabel();
-        inputTable = new javax.swing.JTable();
-        jLabel4 = new javax.swing.JLabel();
-        outputTable = new javax.swing.JTable();
 
         setLayout(new java.awt.CardLayout());
+        add(patchPanel, "patch");
 
-        patchPanel.setLayout(new java.awt.GridBagLayout());
+        jPanel1.setLayout(new java.awt.BorderLayout());
+
+        jPanel2.setLayout(new java.awt.GridBagLayout());
 
         jLabel1.setFont(new java.awt.Font("Lucida Grande", 0, 24)); // NOI18N
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setText("Patch properties");
+        jLabel1.setText("Nothing selected");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        patchPanel.add(jLabel1, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(0, 12, 0, 11);
+        jPanel2.add(jLabel1, gridBagConstraints);
 
-        jLabel2.setText("Title:");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 11);
-        patchPanel.add(jLabel2, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 11);
-        patchPanel.add(title, gridBagConstraints);
+        jPanel1.add(jPanel2, java.awt.BorderLayout.NORTH);
 
-        jLabel3.setText("Inputs:");
+        add(jPanel1, "none");
+
+        jPanel4.setLayout(new java.awt.GridBagLayout());
+
+        jLabel2.setFont(new java.awt.Font("Lucida Grande", 0, 24)); // NOI18N
+        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel2.setText("Multiple selection");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 11);
-        patchPanel.add(jLabel3, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(0, 12, 0, 11);
+        jPanel4.add(jLabel2, gridBagConstraints);
 
-        inputTable.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 11);
-        patchPanel.add(inputTable, gridBagConstraints);
+        jPanel3.add(jPanel4);
 
-        jLabel4.setText("Outputs:");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 11);
-        patchPanel.add(jLabel4, gridBagConstraints);
-
-        outputTable.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 11, 11);
-        patchPanel.add(outputTable, gridBagConstraints);
-
-        add(patchPanel, "patch");
+        add(jPanel3, "multiple");
     }// </editor-fold>//GEN-END:initComponents
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTable inputTable;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JTable outputTable;
-    private javax.swing.JPanel patchPanel;
-    private javax.swing.JTextField title;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private org.tastefuljava.simuli.ui.PatchInspectorPanel patchPanel;
     // End of variables declaration//GEN-END:variables
 }

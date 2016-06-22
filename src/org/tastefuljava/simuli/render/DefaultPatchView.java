@@ -9,8 +9,9 @@ import org.tastefuljava.simuli.model.Output;
 import org.tastefuljava.simuli.model.Patch;
 
 public class DefaultPatchView implements PatchView {
-    private final RenderContext rc;
     private final Patch patch;
+    private final RenderContext rc;
+    private final PatchStyle style;
     private final int width;
     private final int height;
     private final int titleWidth;
@@ -20,14 +21,14 @@ public class DefaultPatchView implements PatchView {
     private final int outputWidth;
     private final int[] outputHeight;
 
-    DefaultPatchView(RenderContext rc, Patch patch) {
+    DefaultPatchView(RenderContext rc, Patch patch, PatchStyle style) {
         this.rc = rc;
         this.patch = patch;
-        int bw = rc.getPatchBorderWidth();
-        int sw = rc.getPatchSeparatorWidth();
-        int pw = rc.getPinWidth();
+        this.style = style;
+        int bw = style.getBorderWidth();
+        int sw = style.getGutterWidth();
         Dimension titleSize = rc.stringSize(patch.getTitle(),
-                rc.getPatchTitleFont());
+                style.getTitleFont());
         inputHeight = new int[patch.getInputCount()];
         inputWidth = rc.columnSize(patch.getInputs(), inputHeight);
         outputHeight = new int[patch.getOutputCount()];
@@ -62,22 +63,22 @@ public class DefaultPatchView implements PatchView {
     @Override
     public Point getInputPinPosition(int i) {
         Rectangle bounds = getInputBounds(i);
-        int pw = rc.getPinWidth();
+        int pw = style.getPinWidth();
         return new Point(bounds.x + pw / 2, bounds.y + bounds.height / 2);
     }
 
     @Override
     public Point getOutputPinPosition(int i) {
         Rectangle bounds = getOutputBounds(i);
-        int pw = rc.getPinWidth();
+        int pw = style.getPinWidth();
         return new Point(bounds.x + bounds.width - (pw + 1) / 2,
                 bounds.y + bounds.height / 2);
     }
 
     private Rectangle getInputBounds(int i) {
-        int bw = rc.getPatchBorderWidth();
-        int sw = rc.getPatchSeparatorWidth();
-        int pw = rc.getPinWidth();
+        int bw = style.getBorderWidth();
+        int sw = style.getGutterWidth();
+        int pw = style.getPinWidth();
         int x = bw;
         int y = bw + titleHeight + sw;
         for (int k = 0; k < i; ++k) {
@@ -87,9 +88,9 @@ public class DefaultPatchView implements PatchView {
     }
 
     private Rectangle getOutputBounds(int i) {
-        int bw = rc.getPatchBorderWidth();
-        int sw = rc.getPatchSeparatorWidth();
-        int pw = rc.getPinWidth();
+        int bw = style.getBorderWidth();
+        int sw = style.getGutterWidth();
+        int pw = style.getPinWidth();
         int x = bw + inputWidth + sw;
         int y = bw + titleHeight + sw;
         for (int k = 0; k < i; ++k) {
@@ -100,8 +101,8 @@ public class DefaultPatchView implements PatchView {
 
     @Override
     public void paint(Graphics2D g, int x, int y) {
-        int bw = rc.getPatchBorderWidth();
-        int sw = rc.getPatchSeparatorWidth();
+        int bw = style.getBorderWidth();
+        int sw = style.getGutterWidth();
         paintBorder(g, x, y);
         x += bw;
         y += bw;
@@ -114,38 +115,41 @@ public class DefaultPatchView implements PatchView {
 
     private void paintOutput(Graphics2D g, Output out, int x, int y,
             int w, int h) {
-        int pw = rc.getPinWidth();
-        int sw = rc.getPatchSeparatorWidth();
-        rc.paintString(g, out.getName(), rc.getPinNameFont(), x, y,
+        int pw = style.getPinWidth();
+        int sw = style.getGutterWidth();
+        rc.paintString(g, out.getName(), style.getPinNameFont(), x, y,
                 w-pw-sw, h, HorizontalAlignment.RIGHT, VerticalAlignment.TOP);
         rc.paintPin(g, out, x + w - pw, y + (h - pw) / 2, pw, pw);
     }
 
     private void paintInput(Graphics2D g, Input in, int x, int y,
             int w, int h) {
-        int pw = rc.getPinWidth();
-        int sw = rc.getPatchSeparatorWidth();
+        int pw = style.getPinWidth();
+        int sw = style.getGutterWidth();
         rc.paintPin(g, in, x, y + (h - pw) / 2, pw, pw);
-        rc.paintString(g, in.getName(), rc.getPinNameFont(), x + pw + sw, y,
+        rc.paintString(g, in.getName(), style.getPinNameFont(), x + pw + sw, y,
                 w - pw - sw, h,
                 HorizontalAlignment.LEFT, VerticalAlignment.TOP);
     }
 
     private void paintTitle(Graphics2D g, Patch patch, int x, int y) {
-        rc.paintString(g, patch.getTitle(), rc.getPatchTitleFont(), x, y,
+        rc.paintString(g, patch.getTitle(), style.getTitleFont(), x, y,
                 titleWidth, titleHeight,
                 HorizontalAlignment.LEFT, VerticalAlignment.TOP);
     }
 
     private void paintBorder(Graphics2D g, int x, int y) {
+        g.setPaint(style.getBackground());
+        g.fillRect(x, y, width, height);
+        g.setPaint(style.getForeground());
         g.drawRect(x, y, width, height);
     }
 
     @Override
     public <T> T hitTest(int xt, int yt, HitTester<T> tester) {
-        int bw = rc.getPatchBorderWidth();
-        int sw = rc.getPatchSeparatorWidth();
-        int pw = rc.getPinWidth();
+        int bw = style.getBorderWidth();
+        int sw = style.getGutterWidth();
+        int pw = style.getPinWidth();
         int x = getX();
         int y = getY();
         int r = x + width;

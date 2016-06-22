@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.tastefuljava.simuli.model.Input;
 import org.tastefuljava.simuli.model.Output;
@@ -30,13 +29,8 @@ public class RenderContext implements Closeable {
             = new ThreadLocal<>();
 
     private final FontRenderContext frc;
-    private final Properties props;
-    private Font patchTitleFont;
-    private Font pinNameFont;
-    private int pinWidth = -1;
-    private int patchBorderWidth = -1;
-    private int patchSeparatorWidth = -1;
     private final Map<Patch, PatchView> patchViews = new HashMap<>();
+    private final PatchStyle patchStyle;
 
     public static RenderContext open(Properties props, Object aaHint,
             Object fmHint) {
@@ -58,7 +52,7 @@ public class RenderContext implements Closeable {
 
     private RenderContext(Properties props, Object aaHint, Object fmHint) {
         this.frc = new FontRenderContext(null, aaHint, fmHint);
-        this.props = props;
+        this.patchStyle = new PatchStyle(props);
     }
 
     @Override
@@ -67,38 +61,6 @@ public class RenderContext implements Closeable {
             throw new IllegalStateException("Not the current RenderContext");
         }
         CURRENT.set(null);
-    }
-
-    public Font getPatchTitleFont() {
-        return patchTitleFont = requireFont(patchTitleFont, "patch-title-font",
-                "Helvetica-plain-20");
-    }
-
-    public Font getPinNameFont() {
-        return pinNameFont = requireFont(pinNameFont, "pin-name-font",
-                "Helvetica-italic-16");
-    }
-
-    public int getPinWidth() {
-        return pinWidth = requireInt(pinWidth, "pin-width", 12);
-    }
-
-    public int getPatchBorderWidth() {
-        return patchBorderWidth = requireInt(patchBorderWidth,
-                "patch-border-width", 2);
-    }
-
-    public int getPatchSeparatorWidth() {
-        return patchSeparatorWidth = requireInt(patchSeparatorWidth,
-                "patch-border-width", 3);
-    }
-
-    public Dimension patchTitleSize(String title) {
-        return stringSize(title, getPatchTitleFont());
-    }
-
-    public Dimension pinNameSize(String name) {
-        return stringSize(name, getPinNameFont());
     }
 
     public Dimension patchSize(Patch patch) {
@@ -127,7 +89,7 @@ public class RenderContext implements Closeable {
         if (in.isConnected()) {
             rc.add(outputPosition(in.getSource()));
         }
-        int pw = getPinWidth();
+        int pw = patchStyle.getPinWidth();
         int halfPw = (pw+1)/2;
         rc.x -= halfPw;
         rc.y -= halfPw;
@@ -247,37 +209,25 @@ public class RenderContext implements Closeable {
     private PatchView patchView(Patch patch) {
         PatchView view = patchViews.get(patch);
         if (view == null) {
-            view = new DefaultPatchView(this, patch);
+            view = new DefaultPatchView(this, patch, patchStyle);
             patchViews.put(patch, view);
         }
         return view;
     }
 
     public int columnSize(Iterable<? extends Pin> pins, int[] height) {
-        int pw = getPinWidth();
-        int sw = getPatchBorderWidth();
+        int pw = patchStyle.getPinWidth();
+        int sw = patchStyle.getBorderWidth();
         int width = 0;
         int i = 0;
         for (Pin pin: pins) {
-            Dimension size = pinNameSize(pin.getName());
+            Dimension size = stringSize(pin.getName(),
+                    patchStyle.getPinNameFont());
             width = Math.max(width, size.width + sw + pw);
             height[i++] = Math.max(pw, size.height);
         }
         return width;
     }
-
-    private Font requireFont(Font font, String key, String def) {
-        return font != null ? font : Font.decode(props.getProperty(key, def));
-    }
-
-    private int requireInt(int value, String key, int def) {
-        if (value >= 0) {
-            return value;
-        }
-        String s = props.getProperty(key);
-        return s == null ? def : Integer.parseInt(s);
-    }
-
 
     private void paintConnections(Graphics2D g, Iterable<Input> inputs,
             int x, int y) {

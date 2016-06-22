@@ -9,6 +9,8 @@ import org.tastefuljava.simuli.model.Output;
 import org.tastefuljava.simuli.model.Patch;
 
 public class DefaultPatchView implements PatchView {
+    private final RenderContext rc;
+    private final Patch patch;
     private final int width;
     private final int height;
     private final int titleWidth;
@@ -17,10 +19,10 @@ public class DefaultPatchView implements PatchView {
     private final int[] inputHeight;
     private final int outputWidth;
     private final int[] outputHeight;
-    private final RenderContext rc;
 
-    DefaultPatchView(Patch patch, RenderContext rc) {
+    DefaultPatchView(RenderContext rc, Patch patch) {
         this.rc = rc;
+        this.patch = patch;
         int bw = rc.getPatchBorderWidth();
         int sw = rc.getPatchSeparatorWidth();
         int pw = rc.getPinWidth();
@@ -35,6 +37,16 @@ public class DefaultPatchView implements PatchView {
         width = 2 * bw + titleWidth;
         height = 2 * bw + titleHeight + sw
                 + Math.max(sum(inputHeight), sum(outputHeight));
+    }
+
+    @Override
+    public int getX() {
+        return patch.getX();
+    }
+
+    @Override
+    public int getY() {
+        return patch.getY();
     }
 
     @Override
@@ -87,7 +99,7 @@ public class DefaultPatchView implements PatchView {
     }
 
     @Override
-    public void paint(Graphics2D g, Patch patch, int x, int y) {
+    public void paint(Graphics2D g, int x, int y) {
         int bw = rc.getPatchBorderWidth();
         int sw = rc.getPatchSeparatorWidth();
         paintBorder(g, x, y);
@@ -130,12 +142,12 @@ public class DefaultPatchView implements PatchView {
     }
 
     @Override
-    public <T> T hitTest(Patch patch, int xt, int yt, HitTester<T> tester) {
+    public <T> T hitTest(int xt, int yt, HitTester<T> tester) {
         int bw = rc.getPatchBorderWidth();
         int sw = rc.getPatchSeparatorWidth();
         int pw = rc.getPinWidth();
-        int x = patch.getX();
-        int y = patch.getY();
+        int x = getX();
+        int y = getY();
         int r = x + width;
         int b = y + height;
         if (xt < x || yt < y || xt >= r || yt >= b) {

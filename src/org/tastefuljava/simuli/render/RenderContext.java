@@ -187,7 +187,7 @@ public class RenderContext implements Closeable {
         for (Patch patch: schema.descending()) {
             if (x >= patch.getX() && y >= patch.getY()) {
                 PatchView pm = patchView(patch);
-                T result = pm.hitTest(patch, x, y, tester);
+                T result = pm.hitTest(x, y, tester);
                 if (result != null) {
                     return result;
                 }
@@ -247,7 +247,7 @@ public class RenderContext implements Closeable {
     private PatchView patchView(Patch patch) {
         PatchView view = patchViews.get(patch);
         if (view == null) {
-            view = new DefaultPatchView(patch, this);
+            view = new DefaultPatchView(this, patch);
             patchViews.put(patch, view);
         }
         return view;
@@ -300,9 +300,7 @@ public class RenderContext implements Closeable {
     }
 
     private void paintPatch(Graphics2D g, Patch patch, int x, int y) {
-        LOG.log(Level.INFO, "paintPatch {0},{1} [{2}]",
-                new Object[]{x, y, patch.getTitle()});
         PatchView pm = patchView(patch);
-        pm.paint(g, patch, x, y);
+        pm.paint(g, x, y);
     }
 }

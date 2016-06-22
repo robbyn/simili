@@ -189,14 +189,6 @@ public class SchemaView extends JComponent
                 hitTest(e.getX(), e.getY(),
                         new HitTester<Boolean>() {
                     @Override
-                    public Boolean patchTitle(Patch patch) {
-                        selection = patch;
-                        selectionNotifier.selectionChanged(
-                                new Patch[] {selection});
-                        return TRUE;
-                    }
-
-                    @Override
                     public Boolean patch(Patch patch) {
                         selection = patch;
                         selectionNotifier.selectionChanged(
@@ -205,36 +197,7 @@ public class SchemaView extends JComponent
                     }
 
                     @Override
-                    public Boolean inputPin(Patch patch, Input in) {
-                        LOG.log(Level.INFO, "inputPin [{0}] - [{1}]",
-                                new Object[]{patch.getTitle(), in.getName()});
-                        return TRUE;
-                    }
-
-                    @Override
-                    public Boolean inputName(Patch patch, Input in) {
-                        LOG.log(Level.INFO, "inputName [{0}] - [{1}]",
-                                new Object[]{patch.getTitle(), in.getName()});
-                        return TRUE;
-                    }
-
-                    @Override
-                    public Boolean outputPin(Patch patch, Output out) {
-                        LOG.log(Level.INFO, "outputPin [{0}] - [{1}]",
-                                new Object[]{patch.getTitle(), out.getName()});
-                        return TRUE;
-                    }
-
-                    @Override
-                    public Boolean outputName(Patch patch, Output out) {
-                        LOG.log(Level.INFO, "outputName [{0}] - [{1}]",
-                                new Object[]{patch.getTitle(), out.getName()});
-                        return TRUE;
-                    }
-
-                    @Override
                     public Boolean background() {
-                        LOG.info("background");
                         return TRUE;
                     }
                 });
@@ -332,7 +295,7 @@ public class SchemaView extends JComponent
         return hitTest(x, y, new HitTester<MouseDragger>() {
             @Override
             public MouseDragger patch(Patch patch) {
-                return new PatchDragger(patch, org.tastefuljava.simuli.ui.SchemaView.this);
+                return new PatchDragger(patch, SchemaView.this);
             }
 
             @Override

@@ -5,28 +5,28 @@ import org.tastefuljava.simuli.model.Output;
 import org.tastefuljava.simuli.model.Patch;
 
 public interface HitTester<T> {
-    default public T patchTitle(Patch patch) {
-        return null;
-    }
-
     default public T patch(Patch patch) {
         return null;
     }
 
+    default public T patchTitle(Patch patch) {
+        return patch(patch);
+    }
+
     default public T inputPin(Patch patch, Input in) {
-        return null;
+        return patch(patch);
     }
 
     default public T inputName(Patch patch, Input in) {
-        return null;
+        return patch(patch);
     }
 
     default public T outputPin(Patch patch, Output out) {
-        return null;
+        return patch(patch);
     }
 
     default public T outputName(Patch patch, Output out) {
-        return null;
+        return patch(patch);
     }
 
     default public T background() {

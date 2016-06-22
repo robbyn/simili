@@ -7,10 +7,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
-import java.awt.font.LineMetrics;
 import java.awt.font.TextLayout;
 import java.awt.geom.CubicCurve2D;
-import java.awt.geom.Rectangle2D;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -105,7 +103,7 @@ public class RenderContext implements Closeable {
 
     public Dimension patchSize(Patch patch) {
         PatchView pm = patchView(patch);
-        return pm.getSize();
+        return new Dimension(pm.getWidth(), pm.getHeight());
     }
 
     public Point inputPosition(Input in) {
@@ -249,7 +247,7 @@ public class RenderContext implements Closeable {
     private PatchView patchView(Patch patch) {
         PatchView view = patchViews.get(patch);
         if (view == null) {
-            view = new PatchView(patch, this);
+            view = new DefaultPatchView(patch, this);
             patchViews.put(patch, view);
         }
         return view;

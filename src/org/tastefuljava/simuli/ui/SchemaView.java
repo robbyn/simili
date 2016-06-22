@@ -244,7 +244,7 @@ public class SchemaView extends JComponent
     public void mouseDragged(MouseEvent e) {
         if (dragger != null) {
             e.consume();
-            LOG.log(Level.INFO, "mouseDragged {0},{1}",
+            LOG.log(Level.FINE, "mouseDragged {0},{1}",
                     new Object[]{e.getX(), e.getY()});
             try (RenderContext rc = this.openRenderContext()) {
                 dragger.drag(e.getX(), e.getY());

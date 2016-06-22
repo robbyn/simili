@@ -1,5 +1,6 @@
 package org.tastefuljava.simuli.ui;
 
+import java.awt.Color;
 import java.awt.HeadlessException;
 import java.awt.Rectangle;
 import java.io.File;
@@ -105,6 +106,8 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
                 scrollPaneComponentResized(evt);
             }
         });
+
+        schemaView.setOpaque(true);
         scrollPane.setViewportView(schemaView);
 
         getContentPane().add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -112,12 +115,12 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         fileMenu.setText("File");
         fileMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                fileMenuMenuSelected(evt);
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                fileMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
         });
 
@@ -150,12 +153,12 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         viewMenu.setText("View");
         viewMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                viewMenuMenuSelected(evt);
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                viewMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
         });
 

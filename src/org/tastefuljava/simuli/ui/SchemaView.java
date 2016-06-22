@@ -134,6 +134,7 @@ public class SchemaView extends JComponent
         addMouseMotionListener(this);
         enableEvents(AWTEvent.MOUSE_EVENT_MASK
                 | AWTEvent.MOUSE_MOTION_EVENT_MASK);
+        setOpaque(true);
     }
 
     public void updateSize() {

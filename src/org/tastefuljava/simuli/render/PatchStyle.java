@@ -18,7 +18,8 @@ public class PatchStyle {
     private final Font titleFont;
     private final Font pinNameFont;
     private final int pinWidth;
-    private final int borderWidth;
+    private final int padding;
+    private final int borderRadius;
     private final int gutterWidth;
     private final Color background;
     private final Color foreground;
@@ -27,7 +28,8 @@ public class PatchStyle {
         titleFont = getFont(props, "patch-title-font", "Arial-plain-20");
         pinNameFont = getFont(props, "pin-name-font", "Arial-italic-16");
         pinWidth = getInt(props, "pin-width", 12);
-        borderWidth = getInt(props, "patch-border-width", 2);
+        padding = getInt(props, "patch-padding", 5);
+        borderRadius = getInt(props, "patch-border-radius", 5);
         gutterWidth = getInt(props, "patch-gutter-width", 3);
         background = getColor(props, "patch-background", "lightGray");
         foreground = getColor(props, "patch-foreground", "black");
@@ -45,8 +47,12 @@ public class PatchStyle {
         return pinWidth;
     }
 
-    public int getBorderWidth() {
-        return borderWidth;
+    public int getPadding() {
+        return padding;
+    }
+
+    public int getBorderRadius() {
+        return borderRadius;
     }
 
     public int getGutterWidth() {

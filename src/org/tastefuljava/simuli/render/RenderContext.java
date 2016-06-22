@@ -217,7 +217,7 @@ public class RenderContext implements Closeable {
 
     public int columnSize(Iterable<? extends Pin> pins, int[] height) {
         int pw = patchStyle.getPinWidth();
-        int sw = patchStyle.getBorderWidth();
+        int sw = patchStyle.getPadding();
         int width = 0;
         int i = 0;
         for (Pin pin: pins) {

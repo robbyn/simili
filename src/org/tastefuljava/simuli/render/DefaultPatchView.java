@@ -25,7 +25,7 @@ public class DefaultPatchView implements PatchView {
         this.rc = rc;
         this.patch = patch;
         this.style = style;
-        int bw = style.getBorderWidth();
+        int bw = style.getPadding();
         int sw = style.getGutterWidth();
         Dimension titleSize = rc.stringSize(patch.getTitle(),
                 style.getTitleFont());
@@ -76,7 +76,7 @@ public class DefaultPatchView implements PatchView {
     }
 
     private Rectangle getInputBounds(int i) {
-        int bw = style.getBorderWidth();
+        int bw = style.getPadding();
         int sw = style.getGutterWidth();
         int pw = style.getPinWidth();
         int x = bw;
@@ -88,7 +88,7 @@ public class DefaultPatchView implements PatchView {
     }
 
     private Rectangle getOutputBounds(int i) {
-        int bw = style.getBorderWidth();
+        int bw = style.getPadding();
         int sw = style.getGutterWidth();
         int pw = style.getPinWidth();
         int x = bw + inputWidth + sw;
@@ -101,7 +101,7 @@ public class DefaultPatchView implements PatchView {
 
     @Override
     public void paint(Graphics2D g, int x, int y) {
-        int bw = style.getBorderWidth();
+        int bw = style.getPadding();
         int sw = style.getGutterWidth();
         paintBorder(g, x, y);
         x += bw;
@@ -139,15 +139,16 @@ public class DefaultPatchView implements PatchView {
     }
 
     private void paintBorder(Graphics2D g, int x, int y) {
+        int borderRadius = style.getBorderRadius();
         g.setPaint(style.getBackground());
-        g.fillRect(x, y, width, height);
+        g.fillRoundRect(x, y, width, height, borderRadius, borderRadius);
         g.setPaint(style.getForeground());
-        g.drawRect(x, y, width, height);
+        g.drawRoundRect(x, y, width, height, borderRadius, borderRadius);
     }
 
     @Override
     public <T> T hitTest(int xt, int yt, HitTester<T> tester) {
-        int bw = style.getBorderWidth();
+        int bw = style.getPadding();
         int sw = style.getGutterWidth();
         int pw = style.getPinWidth();
         int x = getX();

@@ -176,8 +176,7 @@ public class SchemaView extends JComponent
                 Rectangle rc = pc.getBounds(schema);
                 int width = rc.width + margin.left + margin.right;
                 int height = rc.height + margin.top + margin.bottom;
-                return new Dimension(Math.max(width, getWidth()),
-                        Math.max(height, getHeight()));
+                return new Dimension(width, height);
             }
         }
     }

@@ -38,7 +38,7 @@ public class Configuration {
             throws IOException {
         try (OutputStream stream = new FileOutputStream(file);
                 Writer out = new OutputStreamWriter(stream)) {
-            props.store(out, "Simili user settings");
+            props.store(out, "Simuli user settings");
         }
     }
 
@@ -57,7 +57,7 @@ public class Configuration {
 
     private static File userFile() {
         File home = userHome();
-        File dir = new File(home, ".simili");
+        File dir = new File(home, ".simuli");
         dir.mkdir();
         return new File(dir, "settings.properties");
     }

@@ -10,7 +10,7 @@ public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
-        LOG.info("Starting Simili");
+        LOG.info("Starting Simuli");
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {

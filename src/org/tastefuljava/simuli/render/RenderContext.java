@@ -7,12 +7,12 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
+import java.awt.font.LineMetrics;
 import java.awt.font.TextLayout;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Rectangle2D;
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +38,7 @@ public class RenderContext implements Closeable {
     private int pinWidth = -1;
     private int patchBorderWidth = -1;
     private int patchSeparatorWidth = -1;
-    private final Map<Patch, PatchView> patchMetricsCache = new HashMap<>();
+    private final Map<Patch, PatchView> patchViews = new HashMap<>();
 
     public static RenderContext open(Properties props, Object aaHint,
             Object fmHint) {
@@ -96,21 +96,21 @@ public class RenderContext implements Closeable {
     }
 
     public Dimension patchTitleSize(String title) {
-        return getTextSize(title, getPatchTitleFont());
+        return stringSize(title, getPatchTitleFont());
     }
 
     public Dimension pinNameSize(String name) {
-        return getTextSize(name, getPinNameFont());
+        return stringSize(name, getPinNameFont());
     }
 
     public Dimension patchSize(Patch patch) {
-        PatchView pm = patchMetrics(patch);
+        PatchView pm = patchView(patch);
         return pm.getSize();
     }
 
     public Point inputPosition(Input in) {
         Patch patch = in.getPatch();
-        PatchView pm = patchMetrics(patch);
+        PatchView pm = patchView(patch);
         Point pos = pm.getInputPinPosition(in.getIndex());
         pos.translate(patch.getX(), patch.getY());
         return pos;
@@ -118,7 +118,7 @@ public class RenderContext implements Closeable {
 
     public Point outputPosition(Output out) {
         Patch patch = out.getPatch();
-        PatchView pm = patchMetrics(patch);
+        PatchView pm = patchView(patch);
         Point pos = pm.getOutputPinPosition(out.getIndex());
         pos.translate(patch.getX(), patch.getY());
         return pos;
@@ -180,17 +180,16 @@ public class RenderContext implements Closeable {
         Point pt = schema.getLeftTop();
         int xs = xt-pt.x ;
         int ys = yt-pt.y;
-        paintConnections(g, filterConnections(schema.patches(), x, y, w, h), xs, ys);
+        paintConnections(g, filterConnections(schema.patches(), x, y, w, h),
+                xs, ys);
         paintPatches(g, filterPatches(schema.patches(), x, y, w, h), xs, ys);
     }
 
     public <T> T hitTest(Schema schema, int x, int y, HitTester<T> tester) {
         for (Patch patch: schema.descending()) {
-            int px = patch.getX();
-            int py = patch.getY();
-            if (px < x && py < y) {
-                PatchView pm = patchMetrics(patch);
-                T result = pm.hitTest(patch, x - px, y - py, tester);
+            if (x >= patch.getX() && y >= patch.getY()) {
+                PatchView pm = patchView(patch);
+                T result = pm.hitTest(patch, x, y, tester);
                 if (result != null) {
                     return result;
                 }
@@ -202,7 +201,7 @@ public class RenderContext implements Closeable {
     public Rectangle getBounds(Schema schema) {
         Rectangle rc = new Rectangle();
         for (Patch patch: schema.patches()) {
-            PatchView pm = patchMetrics(patch);
+            PatchView pm = patchView(patch);
             rc.add(new Rectangle(patch.getX(), patch.getY(),
                     pm.getWidth(), pm.getHeight()));
         }
@@ -219,33 +218,54 @@ public class RenderContext implements Closeable {
         }
     }
 
-    private PatchView patchMetrics(Patch patch) {
-        PatchView metrics = patchMetricsCache.get(patch);
-        if (metrics == null) {
-            Dimension titleSize = patchTitleSize(patch.getTitle());
-            List<Dimension> inputSize = pinColumnSize(patch.getInputs());
-            List<Dimension> outputSize = pinColumnSize(patch.getOutputs());
-            metrics = new PatchView(titleSize, inputSize, outputSize);
-            patchMetricsCache.put(patch, metrics);
+    public void paintPin(Graphics2D g, Pin pin, int x, int y, int w, int h) {
+        if (pin.isConnected()) {
+            g.fillOval(x, y, w, h);
+        } else {
+            g.drawOval(x, y, w, h);
         }
-        return metrics;
     }
 
-    private <T extends Pin> List<Dimension> pinColumnSize(Iterable<T> pins) {
-        List<Dimension> result = new ArrayList<>();
-        for (Pin pin : pins) {
-            Dimension dim = pinNameSize(pin.getName());
-            dim.width += getPinWidth();
-            result.add(dim);
-        }
-        return result;
+    public Dimension stringSize(String s, Font font) {
+        TextLayout layout = new TextLayout(s, font, frc);
+        return textSize(layout);
     }
 
-    private Dimension getTextSize(String title, Font font) {
-        TextLayout layout = new TextLayout(title, font, frc);
-        Rectangle2D rc = layout.getBounds();
-        return new Dimension((int) Math.ceil(rc.getWidth()),
-                (int) Math.ceil(rc.getHeight()));
+    public void paintString(Graphics2D g, String s, Font font, int x, int y,
+            int w, int h, HorizontalAlignment ha, VerticalAlignment va) {
+        Rectangle bounds = new Rectangle(x, y, w, h);
+        TextLayout layout = new TextLayout(s, font, frc);
+        Dimension size = textSize(layout);
+        ha.adjustWidth(bounds, size.width);
+        va.adjustHeight(bounds, size.height);
+        layout.draw(g, bounds.x, bounds.y+layout.getAscent());
+    }
+
+    private Dimension textSize(TextLayout layout) {
+        return new Dimension((int)Math.ceil(layout.getAdvance()),
+                (int)Math.ceil(layout.getAscent() + layout.getDescent()));
+    }
+
+    private PatchView patchView(Patch patch) {
+        PatchView view = patchViews.get(patch);
+        if (view == null) {
+            view = new PatchView(patch, this);
+            patchViews.put(patch, view);
+        }
+        return view;
+    }
+
+    public int columnSize(Iterable<? extends Pin> pins, int[] height) {
+        int pw = getPinWidth();
+        int sw = getPatchBorderWidth();
+        int width = 0;
+        int i = 0;
+        for (Pin pin: pins) {
+            Dimension size = pinNameSize(pin.getName());
+            width = Math.max(width, size.width + sw + pw);
+            height[i++] = Math.max(pw, size.height);
+        }
+        return width;
     }
 
     private Font requireFont(Font font, String key, String def) {
@@ -260,34 +280,6 @@ public class RenderContext implements Closeable {
         return s == null ? def : Integer.parseInt(s);
     }
 
-
-    private static int columnWidth(Collection<Dimension> dims) {
-        int result = 0;
-        for (Dimension dim : dims) {
-            int w = dim.width;
-            if (w > result) {
-                result = w;
-            }
-        }
-        return result;
-    }
-
-    private static int[] columnHeight(Collection<Dimension> dims) {
-        int[] result = new int[dims.size()];
-        int i = 0;
-        for (Dimension dim : dims) {
-            result[i++] = dim.height;
-        }
-        return result;
-    }
-
-    private static int sum(int[] array) {
-        int sum = 0;
-        for (int e : array) {
-            sum += e;
-        }
-        return sum;
-    }
 
     private void paintConnections(Graphics2D g, Iterable<Input> inputs,
             int x, int y) {
@@ -312,239 +304,7 @@ public class RenderContext implements Closeable {
     private void paintPatch(Graphics2D g, Patch patch, int x, int y) {
         LOG.log(Level.INFO, "paintPatch {0},{1} [{2}]",
                 new Object[]{x, y, patch.getTitle()});
-        PatchView pm = patchMetrics(patch);
+        PatchView pm = patchView(patch);
         pm.paint(g, patch, x, y);
-    }
-
-    private void drawPin(Graphics2D g, Pin pin, int x, int y, int w, int h) {
-        if (pin.isConnected()) {
-            g.fillOval(x, y, w, h);
-        } else {
-            g.drawOval(x, y, w, h);
-        }
-    }
-
-    private class PatchView {
-        private final int width;
-        private final int height;
-        private final int titleWidth;
-        private final int titleHeight;
-        private final int inputWidth;
-        private final int[] inputHeight;
-        private final int outputWidth;
-        private final int[] outputHeight;
-
-        PatchView(Dimension titleSize, Collection<Dimension> inputSize,
-                Collection<Dimension> outputSize) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
-            int pw = getPinWidth();
-            inputWidth = columnWidth(inputSize) + pw + sw;
-            inputHeight = columnHeight(inputSize);
-            outputWidth = columnWidth(outputSize) + pw + sw;
-            outputHeight = columnHeight(outputSize);
-            titleWidth = Math.max(titleSize.width,
-                    inputWidth + sw + outputWidth);
-            titleHeight = titleSize.height;
-            width = 2 * bw + titleWidth;
-            height = 2 * bw
-                    + titleHeight
-                    + sw
-                    + Math.max(sum(inputHeight), sum(outputHeight));
-        }
-
-        public int getWidth() {
-            return width;
-        }
-
-        public int getHeight() {
-            return height;
-        }
-
-        public Dimension getSize() {
-            return new Dimension(width, height);
-        }
-
-        public int getTitleWidth() {
-            return titleWidth;
-        }
-
-        public int getTitleHeight() {
-            return titleHeight;
-        }
-
-        public Dimension getTitleSize() {
-            return new Dimension(titleWidth, titleHeight);
-        }
-
-        public int getInputWidth() {
-            return inputWidth;
-        }
-
-        public Dimension getInputSize(int i) {
-            return new Dimension(inputWidth, inputHeight[i]);
-        }
-
-        public int getOutputWidth() {
-            return outputWidth;
-        }
-
-        public Dimension getOutputSize(int i) {
-            return new Dimension(outputWidth, outputHeight[i]);
-        }
-
-        public Rectangle getTitleBounds() {
-            int bw = getPatchBorderWidth();
-            return new Rectangle(bw, bw, titleWidth, titleHeight);
-        }
-
-        public Point getInputPinPosition(int i) {
-            Rectangle rc = getInputBounds(i);
-            int pw = getPinWidth();
-            return new Point(rc.x + pw/2, rc.y + rc.height/2);
-        }
-
-        public Point getOutputPinPosition(int i) {
-            Rectangle rc = getOutputBounds(i);
-            int pw = getPinWidth();
-            return new Point(rc.x + rc.width - (pw+1)/2, rc.y + rc.height/2);
-        }
-
-        public Rectangle getInputBounds(int i) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
-            int pw = getPinWidth();
-            int x = bw;
-            int y = bw + titleHeight + sw;
-            for (int k = 0; k < i; ++k) {
-                y += inputHeight[k];
-            }
-            return new Rectangle(x, y, inputWidth, inputHeight[i]);
-        }
-
-        public Rectangle getOutputBounds(int i) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
-            int pw = getPinWidth();
-            int x = bw + inputWidth + sw;
-            int y = bw + titleHeight + sw;
-            for (int k = 0; k < i; ++k) {
-                y += outputHeight[k];
-            }
-            return new Rectangle(x, y, outputWidth, outputHeight[i]);
-        }
-
-        public void paint(Graphics2D g, Patch patch, int x, int y) {
-            paintBorder(g, x, y);
-            Rectangle rc = getTitleBounds();
-            rc.translate(x, y);
-            paintTitle(patch, g, rc.x, rc.y);
-            int i = 0;
-            for (Input in: patch.getInputs()) {
-                rc = getInputBounds(i++);
-                rc.translate(x, y);
-                paintInput(g, in, rc.x, rc.y, rc.width, rc.height);
-            }
-            i = 0;
-            for (Output out: patch.getOutputs()) {
-                rc = getOutputBounds(i++);
-                rc.translate(x, y);
-                paintOutput(g, out, rc.x, rc.y, rc.width, rc.height);
-            }
-        }
-
-        private void paintOutput(Graphics2D g, Output out, int x, int y,
-                int w, int h) {
-            int pw = getPinWidth();
-            int sw = getPatchSeparatorWidth();
-            TextLayout layout = new TextLayout(out.getName(), getPinNameFont(),
-                    frc);
-            Rectangle2D tbounds = layout.getBounds();
-            int tx = x + w - pw - sw
-                    - (int)Math.ceil(tbounds.getWidth());
-            layout.draw(g, tx, y + layout.getAscent());
-            drawPin(g, out, x + w - pw, y + (h - pw)/2, pw, pw);
-        }
-
-        private void paintInput(Graphics2D g, Input in, int x, int y,
-                int w, int h) {
-            int pw = getPinWidth();
-            int sw = getPatchSeparatorWidth();
-            TextLayout layout = new TextLayout(in.getName(), getPinNameFont(),
-                    frc);
-            layout.draw(g, x + pw + sw,
-                    y + layout.getAscent());
-            drawPin(g, in, x, y + (h - pw)/2, pw, pw);
-        }
-
-        private void paintTitle(Patch patch, Graphics2D g, int x, int y) {
-            TextLayout layout = new TextLayout(patch.getTitle(),
-                    getPatchTitleFont(), frc);
-            layout.draw(g, x, y + layout.getAscent());
-        }
-
-        private void paintBorder(Graphics2D g, int x, int y) {
-            g.drawRect(x, y, width, height);
-        }
-
-        public <T> T hitTest(Patch patch, int x, int y, HitTester<T> tester) {
-            int bw = getPatchBorderWidth();
-            int sw = getPatchSeparatorWidth();
-            int pw = getPinWidth();
-            x -= bw;
-            y -= bw;
-            int w = width - 2*bw;
-            int h = height - 2*bw;
-            if (x < 0 || y < 0 || x >= w || y >= h) {
-                return null;
-            }
-            y -= titleHeight;
-            if (y < 0) {
-                return tester.patchTitle(patch);
-            }
-            y -= sw;
-            if (y >= 0) {
-                if (x < inputWidth) {
-                    int i = 0;
-                    for (Input in: patch.getInputs()) {
-                        y -= inputHeight[i++];
-                        if (y < 0) {
-                            if (x < pw) {
-                                return tester.inputPin(patch, in);
-                            } else if (x >= pw + sw) {
-                                return tester.inputName(patch, in);
-                            } else {
-                                break;
-                            }
-                        }
-                        y -= sw;
-                        if (y < 0) {
-                            break;
-                        }
-                    }
-                }
-                x -= inputWidth - sw;
-                if (x >= 0 && x < outputWidth) {
-                    int i = 0;
-                    for (Output out: patch.getOutputs()) {
-                        y -= outputHeight[i++];
-                        if (y < 0) {
-                            if (x >= outputWidth - pw) {
-                                return tester.outputPin(patch, out);
-                            } else if (x < outputWidth - pw - sw) {
-                                return tester.outputName(patch, out);
-                            } else {
-                                break;
-                            }
-                        }
-                        y -= sw;
-                        if (y < 0) {
-                            break;
-                        }
-                    }
-                }
-            }
-            return tester.patch(patch);
-        }
     }
 }

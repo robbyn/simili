@@ -16,7 +16,7 @@ public class PatchDragger implements MouseDragger {
     private int dy;
     private final SchemaView view;
 
-    public PatchDragger(Patch patch, final SchemaView view) {
+    public PatchDragger(Patch patch, SchemaView view) {
         this.view = view;
         this.patch = patch;
         RenderContext rc = RenderContext.current();
@@ -28,7 +28,7 @@ public class PatchDragger implements MouseDragger {
     public void start(int x, int y) {
         dx = pos.x - x;
         dy = pos.y - y;
-        view.repaint();
+        view.updateSize();
     }
 
     @Override
@@ -36,13 +36,13 @@ public class PatchDragger implements MouseDragger {
         moveTo(x, y);
         Point pt = view.component2schema(pos.x, pos.y);
         patch.setPosition(pt.x, pt.y);
-        view.repaint();
+        view.updateSize();
     }
 
     @Override
     public void drag(int x, int y) {
         moveTo(x, y);
-        view.repaint();
+        view.updateSize();
     }
 
     @Override

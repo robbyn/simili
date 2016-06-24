@@ -30,6 +30,7 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
     public SchemaEditorFrame() {
         initComponents();
+        scrollPane.getViewport().setBackground(Color.WHITE);
         Schema schema = new Schema();
         Patch patch = new Patch();
         patch.setTitle("Sample Patch 1");
@@ -107,7 +108,7 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
             }
         });
 
-        schemaView.setOpaque(true);
+        schemaView.setOpaque(false);
         scrollPane.setViewportView(schemaView);
 
         getContentPane().add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -115,12 +116,12 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         fileMenu.setText("File");
         fileMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                fileMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                fileMenuMenuSelected(evt);
             }
         });
 
@@ -153,12 +154,12 @@ public class SchemaEditorFrame extends javax.swing.JFrame {
 
         viewMenu.setText("View");
         viewMenu.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuSelected(javax.swing.event.MenuEvent evt) {
-                viewMenuMenuSelected(evt);
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
             }
             public void menuDeselected(javax.swing.event.MenuEvent evt) {
             }
-            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                viewMenuMenuSelected(evt);
             }
         });
 

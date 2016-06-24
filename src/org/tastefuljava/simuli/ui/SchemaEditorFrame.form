@@ -102,9 +102,6 @@
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
         <Container class="org.tastefuljava.simuli.ui.SchemaView" name="schemaView">
-          <Properties>
-            <Property name="opaque" type="boolean" value="true"/>
-          </Properties>
 
           <Layout class="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout">
             <Property name="useNullLayout" type="boolean" value="true"/>

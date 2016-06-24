@@ -4,6 +4,7 @@ import org.tastefuljava.simuli.ui.dragger.PatchDragger;
 import org.tastefuljava.simuli.ui.dragger.InputDragger;
 import org.tastefuljava.simuli.ui.dragger.OutputDragger;
 import java.awt.AWTEvent;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -19,6 +20,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import javax.swing.JViewport;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import org.tastefuljava.simuli.model.Input;
@@ -134,11 +136,11 @@ public class SchemaView extends JComponent
         addMouseMotionListener(this);
         enableEvents(AWTEvent.MOUSE_EVENT_MASK
                 | AWTEvent.MOUSE_MOTION_EVENT_MASK);
-        setOpaque(true);
     }
 
     public void updateSize() {
         revalidate();
+        repaint();
     }
 
     @Override
@@ -149,6 +151,8 @@ public class SchemaView extends JComponent
     }
 
     private void paintSchema(Graphics2D g) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                 TEXT_ANTIALIAS);
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
@@ -174,10 +178,12 @@ public class SchemaView extends JComponent
             return super.getPreferredSize();
         } else {
             try (RenderContext pc = openRenderContext()) {
+                Dimension extent = getViewportExtent();
                 Rectangle rc = pc.getBounds(schema);
                 int width = rc.width + margin.left + margin.right;
                 int height = rc.height + margin.top + margin.bottom;
-                return new Dimension(width, height);
+                return new Dimension(Math.max(width, extent.width),
+                        Math.max(height, extent.height));
             }
         }
     }
@@ -310,4 +316,12 @@ public class SchemaView extends JComponent
         });
     }
 
+    private Dimension getViewportExtent() {
+        Container cont = this.getParent();
+        if (cont instanceof JViewport) {
+            return ((JViewport)cont).getExtentSize();
+        } else {
+            return new Dimension();
+        }
+    }
 }

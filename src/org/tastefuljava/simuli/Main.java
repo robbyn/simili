@@ -11,14 +11,11 @@ public class Main {
 
     public static void main(String[] args) {
         LOG.info("Starting Simuli");
-        EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    new SchemaEditorFrame().display();
-                } catch (IOException ex) {
-                    LOG.log(Level.SEVERE, null, ex);
-                }
+        EventQueue.invokeLater(() -> {
+            try {
+                new SchemaEditorFrame().display();
+            } catch (IOException ex) {
+                LOG.log(Level.SEVERE, null, ex);
             }
         });
     }    

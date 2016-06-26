@@ -26,8 +26,8 @@ class DocumentReader extends DefaultHandler {
     private Schema schema;
     private Patch patch;
     private StringBuilder buf;
-    private Map<String,Input> inputs = new HashMap<>();
-    private Map<String,Output> outputs = new HashMap<>();
+    private final Map<String,Input> inputs = new HashMap<>();
+    private final Map<String,Output> outputs = new HashMap<>();
 
     Schema getSchema() {
         return schema;

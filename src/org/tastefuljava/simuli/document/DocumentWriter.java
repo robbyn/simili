@@ -44,9 +44,9 @@ class DocumentWriter implements Closeable {
             writePatch(patch);
         }
         for (Patch patch: schema.patches()) {
-            for (Output out: patch.getOutputs()) {
-                if (out.isConnected()) {
-                    writeLinks(out);
+            for (Output pin: patch.getOutputs()) {
+                if (pin.isConnected()) {
+                    writeLinks(pin);
                 }
             }
         }
